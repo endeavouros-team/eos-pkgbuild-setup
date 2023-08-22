@@ -45,6 +45,64 @@ ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 # - The AUR package names require suffix "/aur".
 # - The EndeavourOS names are actually folder names for packages under PKGBUILDS, not actual package names!
 #
+
+declare -A PKG_CHANGELOGS=(
+    akm                               "https://github.com/endeavouros-team/PKGBUILDS/commits/master/akm"
+    arc-gtk-theme-eos                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/arc-gtk-theme-eos"
+    bashdb                            "https://aur.archlinux.org/cgit/aur.git/log/?h=bashdb"
+    calamares                         "https://github.com/endeavouros-team/calamares/commits/calamares"
+    ckbcomp                           "https://salsa.debian.org/installer-team/console-setup/commits"
+    downgrade                         "https://github.com/archlinux-downgrade/downgrade/blob/main/CHANGELOG.md"
+    endeavouros-keyring               "https://github.com/endeavouros-team/keyring/commits"
+    endeavouros-mirrorlist            "https://github.com/endeavouros-team/PKGBUILDS/commits/master/endeavouros-mirrorlist"
+    endeavouros-skel-default          "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
+    endeavouros-skel-i3wm             "https://github.com/endeavouros-team/endeavouros-i3wm-setup/commits"
+    endeavouros-skel-xfce4            "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
+    endeavouros-theming               "https://github.com/endeavouros-team/endeavouros-theming/commits"
+    endeavouros-xfce4-terminal-colors "https://github.com/endeavouros-team/endeavouros-xfce4-terminal-colors/commits"
+    eos-apps-info                     "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-apps-info"
+    eos-bash-shared                   "https://github.com/endeavouros-team/eos-bash-shared/commits"
+    eos-downgrade                     "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-downgrade"
+    eos-dracut                        "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-dracut"
+    eos-hooks                         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-hooks"
+    eos-lightdm-gtk-theme             "https://github.com/endeavouros-arm/PKGBUILDS/commits/master/eos-lightdm-gtk-theme"   #??
+    eos-lightdm-slick-theme           "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-lightdm-slick-theme"
+    eos-log-tool                      "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-log-tool"
+    eos-lxdm-gtk3                     "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-lxdm-gtk3"
+    eos-packagelist                   "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-packagelist"
+    eos-plasma-sddm-config            "https://github.com/endeavouros-team/eos-plasma-sddm-config/commits"
+    eos-qogir-icons                   "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-qogir-icons"
+    eos-quickstart                    "https://github.com/endeavouros-team/eos-quickstart/commits"
+    eos-rankmirrors                   "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-rankmirrors"
+    eos-sddm-theme                    "https://github.com/endeavouros-team/eos-sddm-theme/commits"
+    eos-settings-budgie               "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-budgie"
+    eos-settings-cinnamon             "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-cinnamon"
+    eos-settings-gnome                "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-budgie"
+    eos-settings-lxde                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-budgie"
+    eos-settings-lxqt                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-budgie"
+    eos-settings-mate                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-budgie"
+    eos-settings-plasma               "https://github.com/endeavouros-team/eos-settings-plasma/commits"
+    eos-translations                  "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-translations"
+    eos-update-notifier               "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-update-notifier"
+    filesystem                        "https://gitlab.archlinux.org/archlinux/packaging/packages/filesystem/-/commits"
+    kernel-install-for-dracut         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/kernel-install-for-dracut"
+    lsb-release                       "https://gitlab.archlinux.org/archlinux/packaging/packages/lsb-release/-/commits"
+    mkinitcpio-openswap               "https://aur.archlinux.org/cgit/aur.git/log/?h=mkinitcpio-openswap"
+    nvidia-hook                       "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-hook"
+    nvidia-inst                       "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-inst"
+    nvidia-installer-common           "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-installer-common"
+    pahis                             "https://github.com/endeavouros-team/PKGBUILDS/commits/master/pahis"
+    paru                              "https://github.com/Morganamilo/paru/releases"
+    rate-mirrors                      "https://github.com/westandskif/rate-mirrors/releases"
+    reflector-bash-completion         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/reflector-bash-completion"
+    reflector-simple                  "https://github.com/endeavouros-team/PKGBUILDS/commits/master/reflector-simple"
+    welcome                           "https://github.com/endeavouros-team/welcome/commits"
+    yad                               "https://github.com/v1cont/yad/blob/master/NEWS"
+    yay                               "https://github.com/Jguer/yay/releases"
+    zfs-dkms                          "https://github.com/openzfs/zfs/releases"
+    zfs-utils                         "https://github.com/openzfs/zfs/releases"
+)
+
 PKGNAMES=(                                        # Alphabetically ordered.
     akm
     arc-gtk-theme-eos
@@ -151,22 +209,6 @@ PKGNAMES_WAIT=(
 )
 
 
-
-declare -A PKG_CHANGELOGS=(
-    bashdb              "https://aur.archlinux.org/cgit/aur.git/log/?h=bashdb"
-    downgrade           "https://github.com/archlinux-downgrade/downgrade/blob/main/CHANGELOG.md"
-    eos-bash-shared     "https://github.com/endeavouros-team/eos-bash-shared/commits"
-    filesystem          "https://gitlab.archlinux.org/archlinux/packaging/packages/filesystem/-/commits"
-    lsb-release         "https://gitlab.archlinux.org/archlinux/packaging/packages/lsb-release/-/commits/main"
-    mkinitcpio-openswap "https://aur.archlinux.org/cgit/aur.git/log/?h=mkinitcpio-openswap"
-    paru                "https://github.com/Morganamilo/paru/releases"
-    rate-mirrors        "https://github.com/westandskif/rate-mirrors/releases"
-    yad                 "https://github.com/v1cont/yad/blob/master/NEWS"
-    yay                 "https://github.com/Jguer/yay/releases"
-    welcome             "https://github.com/endeavouros-team/welcome/commits"
-    zfs-dkms            "https://github.com/openzfs/zfs/releases"
-    zfs-utils           "https://github.com/openzfs/zfs/releases"
-)
 
 
 # HAS_GIT_VER array incldues packages whose pkgver can be anything, i.e. newer package can have lower pkgver.
