@@ -85,7 +85,7 @@ declare -A PKG_CHANGELOGS=(
     eos-translations                  "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-translations"
     eos-update-notifier               "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-update-notifier"
     filesystem                        "https://gitlab.archlinux.org/archlinux/packaging/packages/filesystem/-/commits"
-    kernel-install-for-dracut         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/kernel-install-for-dracut"
+    kernel-install-for-dracut         "https://gitlab.com/dalto.8/kernel-install-for-dracut/commits"
     lsb-release                       "https://gitlab.archlinux.org/archlinux/packaging/packages/lsb-release/-/commits"
     mkinitcpio-openswap               "https://aur.archlinux.org/cgit/aur.git/log/?h=mkinitcpio-openswap"
     nvidia-hook                       "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-hook"
