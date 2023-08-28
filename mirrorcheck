@@ -186,10 +186,11 @@ Main()
     local has_filelist=no # "$(grep "^local USE_GENERATED_FILELIST=" $assets_conf | sed 's|^.*="\([yesno]*\)".*$|\1|')"
     local mode=fast   # show, optimized, fast
     local folder=""
-    local reponame
+    local reponame=""
     local arg
-    local conf=/etc/eos-mirrorcheck.conf
     local arch=""
+    local -r conf=/etc/eos-mirrorcheck.conf
+    local -r DEFAULT_MIRROR_NAME=Alpix
     local supported_params=(
         "<folder-name>"
         --slow
@@ -218,9 +219,9 @@ Main()
     if [ -r assets.conf ] && [ -d PKG_ARCHIVE ] ; then
         arch=x86_64                # we are in the original build folder
     else
-        arch=$(basename "$PWD")    # x86_64
+        arch=$(basename "$PWD")    # x86_64 or aarch64
         case "$arch" in
-            x86_64 | aarch64 | armv7h) ;;
+            x86_64 | aarch64) ;;
             *) DIE "must run this program at an architecture specific folder (e.g. repo/endeavouros/x86_64)." ;;
         esac
         case "$(grep "/endeavouros-team/" ../../.git/config)" in
@@ -237,7 +238,7 @@ Main()
 
     case "$reponame" in
         "")
-            reponame="${MIRROR_NAMES[0]}"       # default: Alpix
+            reponame="$DEFAULT_MIRROR_NAME"
             OneMirror
             ;;
         all)
