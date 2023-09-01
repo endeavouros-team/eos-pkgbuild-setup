@@ -149,8 +149,8 @@ PKGNAMES=(                                        # Alphabetically ordered.
 
     eos-settings-budgie
     eos-settings-cinnamon
-    eos-settings-i3wm
     eos-settings-gnome
+    eos-settings-i3wm
     eos-settings-lxde
     eos-settings-lxqt
     eos-settings-mate
