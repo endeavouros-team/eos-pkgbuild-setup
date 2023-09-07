@@ -51,7 +51,6 @@ declare -A PKG_CHANGELOGS=(
     arc-gtk-theme-eos                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/arc-gtk-theme-eos"
     bashdb                            "https://aur.archlinux.org/cgit/aur.git/log/?h=bashdb"
     calamares                         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/calamares"
-    calamares-git                     "https://github.com/endeavouros-team/calamares/commits/calamares"
     ckbcomp                           "https://salsa.debian.org/installer-team/console-setup/commits"
     downgrade                         "https://github.com/archlinux-downgrade/downgrade/blob/main/CHANGELOG.md"
     endeavouros-keyring               "https://github.com/endeavouros-team/keyring/commits"
@@ -114,7 +113,6 @@ PKGNAMES=(                                        # Alphabetically ordered.
     bashdb/aur
 
     calamares
-    calamares-git                 # I think we don't need this here...
 
     ckbcomp
 
@@ -212,8 +210,6 @@ PKGNAMES=(                                        # Alphabetically ordered.
 PKGNAMES_WAIT=(
     filesystem
     lsb-release
-
-    calamares-git    # avoid building this...
 )
 
 
