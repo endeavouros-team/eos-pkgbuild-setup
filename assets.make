@@ -1170,11 +1170,16 @@ Main2()
     local PKGNAMES=()
     local PKGNAMES_WAIT=()
     local EOS_ROOT=""                       # configures the base folder for all EOS stuff
+    local _PACKAGER=""
 
     source /etc/eos-pkgbuild-setup.conf     # sets the base folder of everything
-    [ -n "$EOS_ROOT" ] || DIE "EOS_ROOT cannot be empty!"
+    [ -n "$EOS_ROOT" ] || DIE "EOS_ROOT is not set in /etc/eos-pkgbuild-setup.conf!"
+    [ -n "$_PACKAGER" ] || DIE "_PACKAGER is not set in /etc/eos-pkgbuild-setup.conf!"
 
     source $ASSETS_CONF                     # local variables (with CAPITAL letters)
+
+    export PACKAGER="$_PACKAGER"
+    echo2 "PACKAGER: $PACKAGER"
 
     [ -n "$PKGNAMES_PARAMETER" ] && PKGNAMES=(${PKGNAMES_PARAMETER#*=})
 
@@ -1802,15 +1807,16 @@ Main() {
 
     test $fail -eq 1 && return
 
-    local _packager="$(AssetsConfLocalVal _PACKAGER)"
-    if [ -n "$_packager" ] ; then
-        export PACKAGER="$_packager"
-    else
-        export PACKAGER="EndeavourOS <info@endeavouros.com>"
+    if false ; then
+        local _packager="$(AssetsConfLocalVal _PACKAGER)"
+        if [ -n "$_packager" ] ; then
+            export PACKAGER="$_packager"
+        else
+            export PACKAGER="EndeavourOS <info@endeavouros.com>"
+        fi
+        _packager=""
+        echo2 "PACKAGER: $PACKAGER"
     fi
-    _packager=""
-
-    echo2 "PACKAGER: $PACKAGER"
 
     local verfile=/usr/share/endeavouros/scripts/eos-pkgbuild-setup.version
     if [ -r $verfile ] ; then
