@@ -210,6 +210,8 @@ PKGNAMES=(                                        # Alphabetically ordered.
 PKGNAMES_WAIT=(
     filesystem
     lsb-release
+
+    ckbcomp
 )
 
 
