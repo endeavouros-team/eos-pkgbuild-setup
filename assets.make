@@ -890,10 +890,12 @@ RunPreHooks()
 }
 
 GitUpdate_repo() {
+    [ "$PREFER_GIT_OVER_RELEASE" = "yes" ] || return
+
     local newrepodir
     if [ -n "$built" ] || [ "$repoup" = "1" ] ; then
         newrepodir="$GITDIR"
-        if [ -e "$newrepodir/.GitUpdate" ] ; then
+        # if [ -e "$newrepodir/.GitUpdate" ] ; then
             if [ -x /usr/bin/GitUpdate ] ; then
                 FinalStopBeforeSyncing "$REPONAME repo"
                 pushd "$newrepodir" >/dev/null
@@ -903,7 +905,7 @@ GitUpdate_repo() {
             else
                 WARN "$FUNCNAME: no GitUpdate app found."
             fi
-        fi
+        # fi
     fi
 }
 
