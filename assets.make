@@ -149,7 +149,13 @@ GetPkgbuildValue() {
             if declare -F pkgver &> /dev/null ; then
                 Pushd ${PKGBUILD%/*}
                 printf2 " please wait... "
+
                 makepkg --skipinteg -od &> /dev/null || DIE "$FUNCNAME: cannot determine 'pkgver' from $PKGBUILD."
+
+                # Seems that makepkg may incorrectly change pkgrel to 1.
+                # Here we work around this bug...
+                sed -E -i PKGBUILD -e "s|^pkgrel=[0-9\.]+|pkgrel=$pkgrel|"
+
                 source "$PKGBUILD"
                 retvar="$(pkgver)"
                 Popd
