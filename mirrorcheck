@@ -46,7 +46,7 @@ NameCheck() {
         else
             case "$mode" in
                 fastall) ;;
-                *) echo2 "    OK: $xx" ;;
+                *) [ $only_fails = no ] && echo2 "    OK: $xx" ;;
             esac
         fi
     done
@@ -81,7 +81,7 @@ ContentsCheck() {
             continue
         fi
         rm -f "$tmpdir/$xx"
-        echo2 "    OK: $xx"
+        [ $only_fails = no ] && echo2 "    OK: $xx"
     done
 }
 
@@ -165,14 +165,15 @@ $progname: Check the validity of EndeavourOS packages in mirrors.
 
 Usage: $progname [parameters]
 parameters:
-    --slow          Check contents of each file.
-    --fast          Check just the name of all package files (default).
-    --optimized     Check contents of some files, and names of other files.
-    --reponame=X    Use given name as the mirror name (default: all known mirrors).
-    --no-filelist   Don't generate list of latest files into the repo.
-    --show-params   Show all available parameters as a list (for completion support).
-    <folder-name>   Name of the local folder that contains package files.
-                    If not given, current folder is used.
+    --slow             Check contents of each file.
+    --fast             Check just the name of all package files (default).
+    --optimized        Check contents of some files, and names of other files.
+    --only-fails, -f   Show only failed file checks.
+    --reponame=X       Use given name as the mirror name (default: all known mirrors).
+    --no-filelist      Don't generate list of latest files into the repo.
+    --show-params      Show all available parameters as a list (for completion support).
+    <folder-name>      Name of the local folder that contains package files.
+                       If not given, current folder is used.
 
 EOF
 }
@@ -187,6 +188,7 @@ Main()
     local mode=fast   # show, optimized, fast
     local folder=""
     local reponame=""
+    local only_fails=no
     local arg
     local arch=""
     local -r conf=/etc/eos-mirrorcheck.conf
@@ -196,6 +198,7 @@ Main()
         --slow
         --fast
         --optimized
+        --only-fails -f
         --reponame=
         --no-filelist
         --show-params
@@ -207,6 +210,7 @@ Main()
             --slow) mode=slow ;;
             --fast) mode=fast ;;
             --optimized) mode=optimized ;;
+            --only-fails | -f) only_fails=yes ;;
             --no-filelist) has_filelist=no ;;   # no repofiles.txt
             --show-params) echo "${supported_params[*]}" ; return ;;
             -*) DIE "unsupported parameter '$arg'" ;;
