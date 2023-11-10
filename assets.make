@@ -442,7 +442,8 @@ ListNameToPkgName()
 
 LogStuff() {
     case "$cmd" in
-        dryrun-local | dryrun) return ;;  # avoid unnecessary pw asking
+        dryrun-local) return ;;  # avoid unnecessary pw asking
+        # dryrun) return ;;  # avoid unnecessary pw asking
     esac
     if which logstuff >& /dev/null ; then
         if ! logstuff state ; then
