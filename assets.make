@@ -441,9 +441,9 @@ ListNameToPkgName()
 }
 
 LogStuff() {
-    if [ "$cmd" = "dryrun-local" ] ; then
-        return  # avoid unnecessary pw asking
-    fi
+    case "$cmd" in
+        dryrun-local | dryrun) return ;;  # avoid unnecessary pw asking
+    esac
     if which logstuff >& /dev/null ; then
         if ! logstuff state ; then
             echo2 "==> logstuff on"
