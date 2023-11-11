@@ -36,8 +36,8 @@ ContentsCheck() {
     done
 
     pushd $tmpdir >/dev/null
-    if [ 0 -eq 1 ] ; then
-        wget -q --timeout=20 --show-progress $remfiles || failcode=$?
+    if false ; then
+        wgetc -q --timeout=20 --show-progress $remfiles || failcode=$?
     else
         curl --location --remote-time --max-time 20 --remote-name-all --progress-bar --fail $remfiles || failcode=$?
     fi

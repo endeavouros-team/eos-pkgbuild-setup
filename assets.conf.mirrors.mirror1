@@ -247,19 +247,6 @@ local ASSET_HOOKS=(
 
 # do this for: icon-themes?
 
-wget() {
-    local wget1=/usr/local/bin/wget.workaround
-    local wget2=/usr/bin/wget
-
-    if [ -x $wget1 ] ; then
-        $wget1 "$@"
-    else
-        $wget2 "$@"
-    fi
-}
-export -f wget
-
-
 _common_show_version() {
     if [ "$localversion" != "$dev_version" ] ; then
         echo -n "[dev=$dev_version] " >&2
@@ -297,7 +284,7 @@ _fetch_that_file() {
         [ "$file" != "-" ] && out="--output '$file'"
         curl --silent --location --max-time 10 $out "$url"
     else
-        wget -q --timeout=10 -O"$file" "$url"
+        wgetc -q --timeout=10 -O"$file" "$url"
     fi
 }
 
