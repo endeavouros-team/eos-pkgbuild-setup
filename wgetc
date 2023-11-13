@@ -24,21 +24,24 @@ SupportedOptions() {
 Usage() {
     local opts=$(printf "%s\n" $(SupportedOptions) | sed 's|^|    |')
     cat <<EOF
-$progname is a limited '$wget' by supporting a subset of '$wget' options using 'curl'.
-Supported '$wget' options:
+$progname is a limited 'wget' by supporting a subset of 'wget' options using 'curl'.
+See also: man wget
+
+$progname supports the following options of 'wget':
 $opts
 EOF
 }
 
 Options() {
     # The only options supported here:
-    local LOPTS="continue,directory-prefix:,help,output-document:,passive-ftp,quiet,show-command,show-progress,supported-options,timeout:,timestamping,user-agent:"
+    local LOPTS="continue,directory-prefix:,help,output-document:,passive-ftp,quiet,show-command"
+          LOPTS+=",show-progress,supported-options,timeout:,timestamping,user-agent:"
     local SOPTS="cP:O:qT:NU:h"
     local opts
     local has_output=no
-    local args="[no-wget]"
 
-    [ -x $wget ] && args=("$@")       # save args for the real wget
+    # local args="[no-wget]"
+    # [ -x $wget ] && args=("$@")       # save args for the real wget
 
     opts="$(LANG=C /usr/bin/getopt -o="$SOPTS" --longoptions "$LOPTS" --name "$progname" -- "$@")" || {
         Usage
@@ -49,10 +52,6 @@ Options() {
 
     while true ; do
         case "$1" in
-            # extra options
-            --show-command)            hide_command=no                                 ;;
-            --supported-options)       SupportedOptions;         exit 0                ;;
-
             # wget                           # curl
             --continue         | -c)   cmd+=(--continue-at -)                          ;;
             --directory-prefix | -P)   cmd+=(--output-dir "$2"); shift; has_output=yes ;;   # ??
@@ -65,8 +64,14 @@ Options() {
             --user-agent       | -U)   cmd+=(--user-agent "$2"); shift                 ;;
             --help             | -h)   Usage;                    exit 0                ;;
 
-            --)                        shift; break                                    ;;
-            -*)                        DIE "internal error: unsupported option '$1'"   ;;
+            # extra options (not in wget)
+            --show-command)      hide_command=no ;;
+            --supported-options) SupportedOptions; exit 0 ;;
+
+            # exit condition
+            --) shift; break ;;
+
+            # -*) DIE "internal error: unsupported option '$1'" ;;    # this line is not really needed
         esac
         shift
     done
@@ -78,7 +83,7 @@ Options() {
 
 Main() {
     local progname="${0##*/}"
-    local wget=wget
+    local wget=/bin/wget
     local cmd=(/usr/bin/curl --fail --location --progress-bar)
     local hide_command=yes
 
