@@ -39,13 +39,13 @@ Main() {
         
         Pushd "$builddir"
 
-        wgetc -q --timeout=10 "$conf" || {
+        wget -q --timeout=10 "$conf" || {
             Popd
             WARN "file '$conf' not found."
             rmdir "$builddir"
             continue
         }
-        wgetc -q --timeout=10 "$conf".$sigend || {
+        wget -q --timeout=10 "$conf".$sigend || {
             Popd
             WARN "file '$conf.$sigend' not found."
             rmdir "$builddir"
