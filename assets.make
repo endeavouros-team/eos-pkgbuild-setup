@@ -5,6 +5,7 @@
 #   - older: check if deletion of e.g. pamac-aur might remove also pamac-aur-git (names have same beginning)
 #   - better epoch handling
 
+
 DebugBreak() {
     local from_function="${FUNCNAME[1]}"
 
