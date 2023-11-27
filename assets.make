@@ -141,10 +141,28 @@ GetPkgbuildValue() {
     local retval2=""
 
     source "$PKGBUILD" || return 1
+
     case "$varname" in
-        depends)     retvar=("${depends[@]}") ;;
-        makedepends) retvar=("${makedepends[@]}") ;;
-        epoch)       retvar="$epoch" ;;
+        arch)          retvar=("${arch[@]}") ;;
+        backup)        retvar=("${backup[@]}") ;;
+        conflicts)     retvar=("${conflicts[@]}") ;;
+        depends)       retvar=("${depends[@]}") ;;
+        makedepends)   retvar=("${makedepends[@]}") ;;
+        optdepends)    retvar=("${optdepends[@]}") ;;
+        pkgname)       retvar=("${pkgname[@]}") ;;
+        provides)      retvar=("${provides[@]}") ;;
+        replaces)      retvar=("${replaces[@]}") ;;
+        source)        retvar=("${source[@]}") ;;
+        validpgpkeys)  retvar=("${validpgpkeys[@]}") ;;
+
+        epoch)         retvar="$epoch" ;;
+        install)       retvar="$install" ;;
+        pkgdesc)       retvar="$pkgdesc" ;;
+        pkgrel)        retvar="$pkgrel" ;;
+        url)           retvar="$url" ;;
+
+        _ver)          retvar="$_ver" ;;
+
         pkgver)
             if declare -F pkgver &> /dev/null ; then
                 Pushd ${PKGBUILD%/*}
@@ -165,9 +183,10 @@ GetPkgbuildValue() {
                 retvar="$pkgver"
             fi
             ;;
-        pkgrel)      retvar="$pkgrel" ;;
-        _ver)        retvar="$_ver" ;;
-        *) return 1 ;;
+        *)
+            WARN "$FUNCNAME: unsupported variable name '$varname'"
+            return 1
+            ;;
     esac
 }
 
@@ -314,13 +333,13 @@ PkgBuildVersion()
     if [ ! -r "$srcfile" ] ; then
         DIE "'$srcfile' does not exist."
     fi
-    local Pkgver=""
-    GetPkgbuildValue "$srcfile" pkgver Pkgver
+
     source "$srcfile"
+
     if [ -n "$epoch" ] ; then
-        echoreturn "$epoch:${Pkgver}-$pkgrel"
+        echoreturn "$epoch:${pkgver}-$pkgrel"
     else
-        echoreturn "${Pkgver}-$pkgrel"
+        echoreturn "${pkgver}-$pkgrel"
     fi
 }
 
