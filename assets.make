@@ -1144,6 +1144,13 @@ ShowResult() {
 
 Main2()
 {
+    local -r RED=$'\e[0;91m'         # starts this foreground text color
+    local -r GREEN=$'\e[0;92m'
+    local -r BLUE=$'\e[0;94m'
+    local -r MAGENTA=$'\e[0;95m'
+    local -r CYAN=$'\e[0;96m'
+    local -r RESET=$'\e[0m'          # back to normal colors
+
     test -n "$PKGEXT" && unset PKGEXT   # don't use env vars!
 
     local buildStartTime
@@ -1286,22 +1293,22 @@ Main2()
 
             if IsInWaitList "$xx" "$tmp" ; then
                 ((items_waiting++))
-                ShowResult "WAITING ($tmpcurr ==> $tmp)" "$hookout"
+                ShowResult "WAITING (${GREEN}$tmpcurr ==> $tmp${RESET})" "$hookout"
                 continue
             fi
             if [ $cmpresult -eq 0 ] ; then
-                ShowResult "OK ($tmpcurr)" "$hookout"
+                ShowResult "OK (${BLUE}$tmpcurr${RESET})" "$hookout"
                 continue
             fi
             if DowngradeProbibited "$cmpresult" "$allow_downgrade" ; then
-                ShowResult "OK ($tmpcurr)" "$hookout"
+                ShowResult "OK (${BLUE}$tmpcurr${RESET})" "$hookout"
                 continue
             fi
 
             DebugBreak
 
             ((total_items_to_build++))
-            ShowResult "CHANGED $tmpcurr ==> $tmp" "$hookout"
+            ShowResult "CHANGED ${GREEN}$tmpcurr ==> $tmp${RESET}" "$hookout"
 
             [ $cmpresult -gt 0 ] && WantPkgDiffs "$xx" "$pkgdirname"
         done
@@ -1314,7 +1321,8 @@ Main2()
 
         local exit_code=$total_items_to_build
         [ $total_items_to_build -eq 0 ] && total_items_to_build=NONE
-        printf2 "\nItems to build: %s/%s\n" "$total_items_to_build" "${#PKGNAMES[@]}"
+
+        printf2 "\nItems to build: %s%s/%s%s\n" "${CYAN}" "$total_items_to_build" "${#PKGNAMES[@]}" "${RESET}"
 
         if [ "$items_waiting" != "0" ] ; then
             printf2   "Items waiting:  %s\n" "$items_waiting"
@@ -1323,7 +1331,7 @@ Main2()
             printf2   "No PKGBUILD:    %s\n" "$no_pkgbuild_count"
         fi
 
-        if true ; then
+        if false ; then
             ExplainHookMarks
         else
             printf2 "\n"
