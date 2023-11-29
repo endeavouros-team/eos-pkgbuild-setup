@@ -744,7 +744,7 @@ PkgbuildExists() {
         ((no_pkgbuild_count++))
         if [ "$special" != "" ] ; then
             local files=$(ls -l "$PKGBUILD_ROOTDIR/$yy" 2>/dev/null)
-            printf2 "WARNING (${PROGNAME}, $special): no PKGBUILD!\n"
+            printf2 "$WARNING (${PROGNAME}, $special): no PKGBUILD!\n"
             if [ -n "$files" ] ; then
                 printf2 "File listing:\n"
                 echo2 "$files" | sed 's|^|    ==> |'
@@ -1259,6 +1259,10 @@ Main2()
     local items_waiting=0
     local no_pkgbuild_count=0
     local hookout=""
+    local -r WARNING="${RED}WARNING${RESET}"
+    local -r OK="${BLUE}OK${RESET}"
+    local -r WAITING="${CYAN}WAITING${RESET}"
+    local -r CHANGED="${CYAN}CHANGED${RESET}"
 
     if [ "$repoup" = "0" ] ; then
 
@@ -1293,22 +1297,22 @@ Main2()
 
             if IsInWaitList "$xx" "$tmp" ; then
                 ((items_waiting++))
-                ShowResult "WAITING (${GREEN}$tmpcurr ==> $tmp${RESET})" "$hookout"
+                ShowResult "$WAITING ($tmpcurr ==> $tmp)" "$hookout"
                 continue
             fi
             if [ $cmpresult -eq 0 ] ; then
-                ShowResult "OK (${BLUE}$tmpcurr${RESET})" "$hookout"
+                ShowResult "$OK ($tmpcurr)" "$hookout"
                 continue
             fi
             if DowngradeProbibited "$cmpresult" "$allow_downgrade" ; then
-                ShowResult "OK (${BLUE}$tmpcurr${RESET})" "$hookout"
+                ShowResult "$OK ($tmpcurr)" "$hookout"
                 continue
             fi
 
             DebugBreak
 
             ((total_items_to_build++))
-            ShowResult "CHANGED ${GREEN}$tmpcurr ==> $tmp${RESET}" "$hookout"
+            ShowResult "$CHANGED$ $tmpcurr ==> $tmp" "$hookout"
 
             [ $cmpresult -gt 0 ] && WantPkgDiffs "$xx" "$pkgdirname"
         done
@@ -1320,9 +1324,15 @@ Main2()
         Popd
 
         local exit_code=$total_items_to_build
-        [ $total_items_to_build -eq 0 ] && total_items_to_build=NONE
+        local color
+        if [ $total_items_to_build -eq 0 ] ; then
+            total_items_to_build=NONE
+            color="${GREEN}"
+        else
+            color="${RED}"
+        fi
 
-        printf2 "\nItems to build: %s%s/%s%s\n" "${CYAN}" "$total_items_to_build" "${#PKGNAMES[@]}" "${RESET}"
+        printf2 "\nItems to build: %s%s/%s%s\n" "$color" "$total_items_to_build" "${#PKGNAMES[@]}" "${RESET}"
 
         if [ "$items_waiting" != "0" ] ; then
             printf2   "Items waiting:  %s\n" "$items_waiting"
