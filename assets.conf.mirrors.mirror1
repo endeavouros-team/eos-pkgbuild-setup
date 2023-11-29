@@ -279,7 +279,7 @@ _fetch_that_file() {
     [ -n "$file" ] || return 1
     [ -n "$url" ] || return 1
 
-    if [ 0 -eq 1 ] ; then
+    if false ; then
         local out=""
         [ "$file" != "-" ] && out="--output '$file'"
         curl --silent --location --max-time 10 $out "$url"
@@ -584,7 +584,7 @@ _yay_hook_check_latest() {
         echo "cannot fetch info about $tool" >&2
         return 1
     fi
-    dev_version="$(echo "$tmpdata" | grep /Jguer/yay/tree/v | head -n 1 | sed 's|^.*/tree/v\([0-9\.]*\)" .*$|\1|')"
+    dev_version="$(echo "$tmpdata" | grep -m1 /Jguer/yay/tree/v | sed 's|^.*/tree/v\([0-9\.]*\)" .*$|\1|')"
 
     _common_show_version
 }
@@ -851,5 +851,5 @@ declare -A ASSET_PACKAGE_HOOKS=(
     # paper-icon-theme-git   _paper-icon-theme-git_hook
     # rate-mirrors           _rate-mirrors_hook
     # yad                    _yad_hook_add_gspell
-    # yay                    _yay_hook_check_latest
+    yay                    _yay_hook_check_latest
 )
