@@ -1312,7 +1312,7 @@ Main2()
             DebugBreak
 
             ((total_items_to_build++))
-            ShowResult "$CHANGED$ $tmpcurr ==> $tmp" "$hookout"
+            ShowResult "$CHANGED ($tmpcurr ==> $tmp" "$hookout)"
 
             [ $cmpresult -gt 0 ] && WantPkgDiffs "$xx" "$pkgdirname"
         done
@@ -1668,13 +1668,14 @@ ManualCheckOfAssets() {
         case "$what" in
             assets) what="assets in $tag" ;;
         esac
+        echo2 ""
         read2 -t $timeout -p "$what: Is $op OK (Y/n)? "
         case "$REPLY" in
             [yY]* | "") break ;;
             *) ;;
         esac
     done
-    echo2 ""
+    #echo2 ""
 }
 
 FinalStopBeforeSyncing() {
