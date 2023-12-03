@@ -1146,6 +1146,7 @@ Main2()
 {
     local -r RED=$'\e[0;91m'         # starts this foreground text color
     local -r GREEN=$'\e[0;92m'
+    local -r YELLOW=$'\e[0;93m'
     local -r BLUE=$'\e[0;94m'
     local -r MAGENTA=$'\e[0;95m'
     local -r CYAN=$'\e[0;96m'
@@ -1262,7 +1263,7 @@ Main2()
     local -r WARNING="${RED}WARNING${RESET}"
     local -r OK="${BLUE}OK${RESET}"
     local -r WAITING="${CYAN}WAITING${RESET}"
-    local -r CHANGED="${CYAN}CHANGED${RESET}"
+    local -r CHANGED="${YELLOW}CHANGED${RESET}"
 
     if [ "$repoup" = "0" ] ; then
 
@@ -1312,7 +1313,7 @@ Main2()
             DebugBreak
 
             ((total_items_to_build++))
-            ShowResult "$CHANGED ($tmpcurr ==> $tmp" "$hookout)"
+            ShowResult "$CHANGED ($tmpcurr ==> $tmp)" "$hookout"
 
             [ $cmpresult -gt 0 ] && WantPkgDiffs "$xx" "$pkgdirname"
         done
