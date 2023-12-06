@@ -176,7 +176,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
 
     nvidia-hook
     nvidia-inst
-    nvidia-installer-common
+    # nvidia-installer-common
 
     pahis
     #paper-icon-theme
