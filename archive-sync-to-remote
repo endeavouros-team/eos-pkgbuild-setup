@@ -3,6 +3,7 @@
 printf2() { printf "$@" >&2 ; }
 echo2()   { echo   "$@" >&2 ; }
 read2()   { read   "$@" >&2 ; }
+Indent()  { sed 's|^|    |' ; }
 
 FolderTests() {
     local filename_head="$1"
@@ -81,7 +82,7 @@ Tag() {
 }
 
 Options() {
-    local progname="$(/usr/bin/basename "$0")"
+    local progname="${0##*/}"
     local opts
 
     opts="$(/usr/bin/getopt -o=hd --longoptions help,dryrun --name "$progname" -- "$@")" || {
@@ -99,11 +100,10 @@ Options() {
 
             -h | --help)
                 cat <<EOF >&2
-Usage: $progname [options] params
+Usage: $progname [options] tag
 Options:
   -d, --dryrun       Simulate run, don't change anything permanently.
-Params:
-  tag                Release assets tag at github.
+Tag:                 Release assets tag at github.
 EOF
                 ;;
             
@@ -115,13 +115,9 @@ EOF
     tag="$1"
 }
 
-Indent() {
-    sed 's|^|    |'
-}
-
 AddsAndRemoves() {
     # combine local and remote, keep 5 latest of each file version
-    local locals_and_remotes=$(printf "%s\n" "$locals" "$remotes" | grep -v "\.sig$" | sort -V)
+    local locals_and_remotes=$(printf "%s\n" "$locals" "$remotes" | grep -v "\.sig$" | sort -Vu)
     local file fileprev=""
     local pkgname pkgnameprev=""
     local files=()
@@ -132,7 +128,7 @@ AddsAndRemoves() {
 
     for file in $locals_and_remotes "$breaker" ; do
         [ "$file" = "$breaker" ]  && break       # all files checked
-        [ "$file" = "$fileprev" ] && continue    # remove duplicates
+        # [ "$file" = "$fileprev" ] && continue    # remove duplicates (commented because of 'sort -Vu' above)
 
         fileprev="$file"
 
@@ -163,6 +159,8 @@ AddsAndRemoves() {
     local remove_remote=()
     local add_local=()
     local remove_local=()
+
+    printf2 "\n===> Managing archived files >>>>>>>>>>>>>\n\n"
 
     # Note: handle .sig files now.
 
@@ -204,6 +202,7 @@ AddsAndRemoves() {
         # remote adds
         if [ ${#add_remote[@]} -gt 0 ] ; then
             add-release-assets "$tag" "${add_remote[@]}" || return $?
+            sleep 1
         fi
 
         # local removes
@@ -217,6 +216,7 @@ AddsAndRemoves() {
             sleep 1
         fi
     fi
+    printf2 "\n<<<<<<<<<< Done. <===============\n\n"
 }
 
 ShowFileInfo() {
