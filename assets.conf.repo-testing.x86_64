@@ -8,32 +8,27 @@
 local REPONAME="endeavouros-testing-dev"
 local RELEASE_TAGS=(endeavouros-pkgbuild-tools)
 
-# user to sign packages
+## user to sign packages
 local SIGNER="EndeavourOS"
 
-# local folders
-local ASSETSDIR="$PWD"
-local PKGBUILD_ROOTDIR="$ASSETSDIR/PKGBUILDS"       # temporary copy only, will always be overwritten
-#local GITDIR="$ASSETSDIR/../../repo-testing"       # not $REPONAME ...
-local GITDIR="$ASSETSDIR/../../eos-tools"           # not $REPONAME ...
+## local folders
 local USE_RELEASE_ASSETS=yes
-local PREFER_GIT_OVER_RELEASE=no                    # yes
+local PREFER_GIT_OVER_RELEASE=no                      # was yes
 
-#if [ "$USE_RELEASE_ASSETS" = "no" ] ; then
 local GITREPOURL=https://github.com/endeavouros-team/eos-tools.git
+# if [ "$USE_RELEASE_ASSETS" = "no" ] ; then
 local GITREPODIR="$(basename "$GITREPOURL" .git)/$REPONAME"
-#fi
-local ARCHIVE_GIT="$ASSETSDIR/../../archive/.git"
+# fi
 local ARCHIVE_TAG=repo-testing
 
-# new way with absolute paths:
-ASSETSDIR="$EOS_ROOT/_BUILD_/$REPONAME"
-PKGBUILD_ROOTDIR="$ASSETSDIR/PKGBUILDS"             # temporary copy only, will always be overwritten
-GITDIR="$EOS_ROOT/eos-tools"
-ARCHIVE_GIT="$EOS_ROOT/archive/.git"
+## new way with absolute paths:
+local ASSETSDIR="$EOS_ROOT/_BUILD_/$REPONAME"
+local PKGBUILD_ROOTDIR="$ASSETSDIR/PKGBUILDS"             # temporary copy only, will always be overwritten
+local GITDIR="$EOS_ROOT/eos-tools"
+local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 
 
-# package name specifications
+## package name specifications
 local PKGNAMES=(                                    # actually: dir names for packages
     b43-firmware/aur
     python3-gpg_batch_sign/aur
