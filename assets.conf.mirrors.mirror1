@@ -12,30 +12,28 @@ local RELEASE_TAGS=(
     # mirror2
 )
 
-# user to sign packages
+## user to sign packages
 local SIGNER="EndeavourOS"
 
-# general options
+## general options
 local USE_GENERATED_FILELIST="no"                   # may generate 'repofiles.txt' into the repo
-# local USE_RELEASE_ASSETS="no"                     # either 'release assets' or "ordinary" github files
 local USE_RELEASE_ASSETS="yes"                      # either 'release assets' or "ordinary" github files
 local PREFER_GIT_OVER_RELEASE=yes
-
-# local folders
-local ASSETSDIR="$PWD"
-local PKGBUILD_ROOTDIR="$ASSETSDIR/PKGBUILDS"       # temporary copy only, will always be overwritten
-local GITDIR="$ASSETSDIR/../../repo"                # not $REPONAME...
+local ARCHIVE_TAG=packages
 
 export MAKEPKG_CLEANUP=yes                          # some of *our* PKGBUILD files (e.g. yay) may use this!
 
-local ARCHIVE_GIT="$ASSETSDIR/../../archive/.git"
-local ARCHIVE_TAG=packages
+## local folders
+# local ASSETSDIR="$PWD"
+# local PKGBUILD_ROOTDIR="$ASSETSDIR/PKGBUILDS"       # temporary copy only, will always be overwritten
+# local GITDIR="$ASSETSDIR/../../repo"                # not $REPONAME...
+# local ARCHIVE_GIT="$ASSETSDIR/../../archive/.git"
 
-# new way with absolute paths:
-ASSETSDIR="$EOS_ROOT/_BUILD_/$REPONAME"
-PKGBUILD_ROOTDIR="$ASSETSDIR/PKGBUILDS"
-GITDIR="$EOS_ROOT/repo"
-ARCHIVE_GIT="$EOS_ROOT/archive/.git"
+## new way with absolute paths:
+local ASSETSDIR="$EOS_ROOT/_BUILD_/$REPONAME"
+local PKGBUILD_ROOTDIR="$ASSETSDIR/PKGBUILDS"
+local GITDIR="$EOS_ROOT/repo"
+local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 
 # source EndeavourOS-packages-buildlist || exit 1
 

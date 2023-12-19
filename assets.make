@@ -1814,31 +1814,23 @@ AssetsConfLocalVal() {
 }
 
 Main() {
-    local _first_arg="$1"
+    local -r PROGNAME="${BASH_ARGV0##*/}"
+    local -r ASSETS_CONF=assets.conf   # This file must exist in the current folder when building packages.
+    local -r ARCH=x86_64
+    local -r _first_arg="$1"
+    local fail=0
+
+    eos-connection-checker || DIE "internet connection is not available."
+
     case "$_first_arg" in
-        --dir=*)
-            _first_arg="${_first_arg#*=}"
-            # [ ! -d "$_first_arg" ] || DIE "the folder in parameter '$1' is not found."
-            cd "$_first_arg" || DIE "'cd $_first_arg' failed."
+        --dir=*)             # user wants to change to the given folder
+            cd "${_first_arg#*=}" || DIE "'cd ${_first_arg#*=}' failed."
             shift
             ;;
     esac
-    local ASSETS_CONF=assets.conf   # This file must exist in the current folder when building packages.
-    local PROGNAME="$(basename "$0")"
-    local ARCH=x86_64
 
-    eos-connection-checker || DIE "internet connection not available."
-
-    [ "$PROGNAME" = "bashdb" ] && PROGNAME="${BASH_ARGV[-1]}"  # could always be like this?
-    [ -n "$PROGNAME" ] || PROGNAME="assets.make"
-    [ -L .git ] || DIE "$PWD/.git must be a symlink to the real .git!"
-    [ -r $ASSETS_CONF ] || DIE "file './$ASSETS_CONF' does not exist in $PWD."
-    # [ -L $ASSETS_CONF ] || DIE "$PWD/$ASSETS_CONF must be a symlink to the real $ASSETS_CONF!"
-
-    # local reponame="$(AssetsConfLocalVal REPONAME)"
-    # local signer="$(  AssetsConfLocalVal SIGNER)"
-    local fail=0
-    # local asset_file_endings="db,files,zst,xz,sig"
+    [ -r $ASSETS_CONF ] || DIE "file '$PWD/$ASSETS_CONF' does not exist."
+    [ -L .git ]         || DIE "$PWD/.git must be a symlink to the real .git!"
 
     local _COMPRESSOR="$(grep "^PKGEXT=" /etc/makepkg.conf | tr -d "'" | sed 's|.*\.pkg\.tar\.||')"
     local REPO_COMPRESSOR="$(AssetsConfLocalVal REPO_COMPRESSOR)"
@@ -1846,14 +1838,13 @@ Main() {
     test -n "$REPO_COMPRESSOR" || REPO_COMPRESSOR=xz
 
     if [ -z "$(grep ^PKGEXT /etc/makepkg.conf | grep zst)" ] ; then
-        echo2 "/etc/makepkg.conf: use zst in variable PKGEXT"
+        echo2 "/etc/makepkg.conf: please use 'zst' in variable PKGEXT"
         fail=1
     fi
     if [ -z "$(grep ^COMPRESSZST /etc/makepkg.conf | grep T0)" ] ; then
         echo2 "/etc/makepkg.conf: add -T0 -19 into variable COMPRESSZST"
         fail=1
     fi
-
     test $fail -eq 1 && return
 
     if false ; then
