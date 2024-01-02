@@ -120,9 +120,9 @@ PKGNAMES=(                                        # Alphabetically ordered.
     endeavouros-keyring
     endeavouros-mirrorlist
 
-    endeavouros-skel-default
-    endeavouros-skel-i3wm
-    endeavouros-skel-xfce4
+    #endeavouros-skel-default
+    #endeavouros-skel-i3wm
+    #endeavouros-skel-xfce4
 
     endeavouros-theming
     endeavouros-xfce4-terminal-colors
@@ -153,12 +153,12 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-settings-plasma
     eos-settings-xfce4
 
-    eos-skel-ce-awesome
-    eos-skel-ce-bspwm
-    eos-skel-ce-openbox
-    eos-skel-ce-qtile
-    eos-skel-ce-sway
-    eos-skel-ce-worm
+    #eos-skel-ce-awesome
+    #eos-skel-ce-bspwm
+    #eos-skel-ce-openbox
+    #eos-skel-ce-qtile
+    #eos-skel-ce-sway
+    #eos-skel-ce-worm
 
     eos-translations
     eos-update-notifier
