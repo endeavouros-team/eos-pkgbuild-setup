@@ -53,9 +53,6 @@ declare -A PKG_CHANGELOGS=(
     downgrade                         "https://github.com/archlinux-downgrade/downgrade/blob/main/CHANGELOG.md"
     endeavouros-keyring               "https://github.com/endeavouros-team/keyring/commits"
     endeavouros-mirrorlist            "https://github.com/endeavouros-team/PKGBUILDS/commits/master/endeavouros-mirrorlist"
-    endeavouros-skel-default          "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
-    endeavouros-skel-i3wm             "https://github.com/endeavouros-team/endeavouros-i3wm-setup/commits"
-    endeavouros-skel-xfce4            "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
     endeavouros-theming               "https://github.com/endeavouros-team/endeavouros-theming/commits"
     endeavouros-xfce4-terminal-colors "https://github.com/endeavouros-team/endeavouros-xfce4-terminal-colors/commits"
     eos-apps-info                     "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-apps-info"
@@ -90,7 +87,6 @@ declare -A PKG_CHANGELOGS=(
     mkinitcpio-openswap               "https://aur.archlinux.org/cgit/aur.git/log/?h=mkinitcpio-openswap"
     nvidia-hook                       "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-hook"
     nvidia-inst                       "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-inst"
-    nvidia-installer-common           "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-installer-common"
     pahis                             "https://github.com/endeavouros-team/PKGBUILDS/commits/master/pahis"
     paru                              "https://github.com/Morganamilo/paru/releases"
     rate-mirrors                      "https://github.com/westandskif/rate-mirrors/releases"
@@ -101,12 +97,17 @@ declare -A PKG_CHANGELOGS=(
     yay                               "https://github.com/Jguer/yay/releases"
     zfs-dkms                          "https://github.com/openzfs/zfs/releases"
     zfs-utils                         "https://github.com/openzfs/zfs/releases"
+
+    ## Removed:
+    # endeavouros-skel-default          "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
+    # endeavouros-skel-i3wm             "https://github.com/endeavouros-team/endeavouros-i3wm-setup/commits"
+    # endeavouros-skel-xfce4            "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
+    # nvidia-installer-common           "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-installer-common"
 )
 
 PKGNAMES=(                                        # Alphabetically ordered.
     akm
     arc-gtk-theme-eos
-    #arc-x-icons-theme/aur
 
     bashdb/aur
 
@@ -115,18 +116,11 @@ PKGNAMES=(                                        # Alphabetically ordered.
     ckbcomp
 
     downgrade/aur
-    # dracut
 
     endeavouros-keyring
     endeavouros-mirrorlist
-
-    #endeavouros-skel-default
-    #endeavouros-skel-i3wm
-    #endeavouros-skel-xfce4
-
     endeavouros-theming
     endeavouros-xfce4-terminal-colors
-
     eos-apps-info
     eos-bash-shared
     eos-downgrade
@@ -142,7 +136,6 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-quickstart
     eos-rankmirrors
     eos-sddm-theme
-
     eos-settings-budgie
     eos-settings-cinnamon
     eos-settings-gnome
@@ -152,21 +145,13 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-settings-mate
     eos-settings-plasma
     eos-settings-xfce4
-
-    #eos-skel-ce-awesome
-    #eos-skel-ce-bspwm
-    #eos-skel-ce-openbox
-    #eos-skel-ce-qtile
-    #eos-skel-ce-sway
-    #eos-skel-ce-worm
-
     eos-translations
     eos-update-notifier
 
     filesystem
 
     kernel-install-for-dracut
-    keyserver-rank
+    keyserver-rank               # probably not needed?
 
     lsb-release
 
@@ -174,10 +159,8 @@ PKGNAMES=(                                        # Alphabetically ordered.
 
     nvidia-hook
     nvidia-inst
-    # nvidia-installer-common
 
     pahis
-    #paper-icon-theme
     paru/aur
 
     qemu-arm-aarch64-static-bin
@@ -187,14 +170,30 @@ PKGNAMES=(                                        # Alphabetically ordered.
     reflector-simple
 
     welcome
-    wgetpaste-eos
-    worm/aur
 
     yad
     yay/aur
 
     zfs-dkms/aur
     zfs-utils/aur
+
+
+    ## Removed:
+    #arc-x-icons-theme/aur
+    # dracut
+    # endeavouros-skel-default
+    # endeavouros-skel-i3wm
+    # endeavouros-skel-xfce4
+    # eos-skel-ce-awesome
+    # eos-skel-ce-bspwm
+    # eos-skel-ce-openbox
+    # eos-skel-ce-qtile
+    # eos-skel-ce-sway
+    # eos-skel-ce-worm
+    # nvidia-installer-common
+    # paper-icon-theme
+    # wgetpaste-eos
+    # worm/aur
 )
 
 # Use option --pkgnames="names" for special checks!
