@@ -89,7 +89,7 @@ declare -A PKG_CHANGELOGS=(
     nvidia-inst                       "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-inst"
     pahis                             "https://github.com/endeavouros-team/PKGBUILDS/commits/master/pahis"
     paru                              "https://github.com/Morganamilo/paru/releases"
-    rate-mirrors                      "https://github.com/westandskif/rate-mirrors/releases"
+    rate-mirrors                      "https://github.com/westandskif/rate-mirrors/commits"
     reflector-bash-completion         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/reflector-bash-completion"
     reflector-simple                  "https://github.com/endeavouros-team/PKGBUILDS/commits/master/reflector-simple"
     welcome                           "https://github.com/endeavouros-team/welcome/commits"
