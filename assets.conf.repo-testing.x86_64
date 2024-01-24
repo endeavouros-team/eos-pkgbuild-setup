@@ -36,7 +36,7 @@ local PKGNAMES=(                                    # actually: dir names for pa
 #    aur/archupdate-indicator
 
     calamares-git
-    calamares
+#    calamares
     eos-pkgbuild-setup
 )
 
