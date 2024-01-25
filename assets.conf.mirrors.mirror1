@@ -148,12 +148,12 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-translations
     eos-update-notifier
 
-    filesystem
+    # filesystem
 
     kernel-install-for-dracut
     keyserver-rank               # probably not needed?
 
-    lsb-release
+    # lsb-release
 
     mkinitcpio-openswap/aur
 
