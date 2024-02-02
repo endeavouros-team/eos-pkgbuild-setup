@@ -135,13 +135,36 @@ Popd()  {
     done
 }
 
-GetPkgbuildValue() {
-    local PKGBUILD="$1"
-    local varname="$2"
-    local -n retvar="$3"
-    local retval2=""
+GetPkgbuildValue() {       # this is used in assets.conf too!
+    #
+    # Extract one or more values from variables of file PKGBUILD into respective user variables.
+    #
+    # Usage: GetPkgbuildValue PKGBUILD toVariable pkgbuildVariable [torVariable pkgbuildVariable [toVariable pkgbuildVariable] ...]
+    #
+    # Example:
+    #    local Pkgver Pkgrel   # user variables
+    #    GetPkgbuildValue $mydir/PKGBUILD Pkgver "pkgver" Pkgrel "pkgrel"
+    #        will return values of 'pkgver' and 'pkgrel' from $mydir/PKGBUILD into Pkgver and Pkgrel, respectively
+    #
 
-    source "$PKGBUILD" || return 1
+    local PKGBUILD="$1"
+    shift
+
+    source "$PKGBUILD" || return 1   # reading PKGBUILD may fail
+
+    while [ "$1" ] ; do
+        [ "$2" ] || DIE "$FUNCNAME: internal error: number of call parameters is not even!"
+        local -n retvar_for_all="$1"
+        GetPkgbuildValue1 "$2" retvar_for_all
+        unset -n retvar_for_all
+        shift 2
+    done
+}
+
+GetPkgbuildValue1() {
+    local varname="$1"
+    local -n retvar="$2"
+    local retval2=""
 
     case "$varname" in
         arch)          retvar=("${arch[@]}") ;;
@@ -167,7 +190,7 @@ GetPkgbuildValue() {
         pkgver)
             if declare -F pkgver &> /dev/null ; then
                 Pushd ${PKGBUILD%/*}
-                printf2 " please wait... "
+                printf2 " running function pkgver() ... "
 
                 makepkg --skipinteg -od &> /dev/null || DIE "$FUNCNAME: cannot determine 'pkgver' from $PKGBUILD."
 
@@ -190,19 +213,6 @@ GetPkgbuildValue() {
             ;;
     esac
 }
-
-#Get_PKGBUILD_item_value() {
-#    local Pkgbuild="$1"
-#    local item="$2"
-#    local -n out="$3"
-#
-#    if true ; then
-#        GetPkgbuildValue "$Pkgbuild" "$item" "$out"
-#    else
-#        out=$(cat "$Pkgbuild" | /usr/bin/grep "^$item=" | cut -d '=' -f2 | sed "s|^[\"']\(.*\)[\"']$|\1|")   # remove possible surrounding quotes
-#    fi
-#}
-
 
 IsListedPackage() {
     # Is a package one of the listed packages in PKGNAMES?
@@ -241,7 +251,7 @@ HandlePossibleEpoch() {
         cd "$PKGBUILD_ROOTDIR/$pkgname"
     fi
 
-    GetPkgbuildValue "PKGBUILD" "epoch" Epoch
+    GetPkgbuildValue "PKGBUILD" Epoch "epoch"
 
     if [ -z "$Epoch" ] ; then
         Newname="$pkg"
@@ -335,12 +345,14 @@ PkgBuildVersion()
         DIE "'$srcfile' does not exist."
     fi
 
-    source "$srcfile"
+    local Epoch="" Pkgver="" Pkgrel=""
 
-    if [ -n "$epoch" ] ; then
-        echoreturn "$epoch:${pkgver}-$pkgrel"
+    GetPkgbuildValue "$srcfile" Epoch "epoch" Pkgver "pkgver" Pkgrel "pkgrel"
+
+    if [ -n "$Epoch" ] ; then
+        echoreturn "$Epoch:${Pkgver}-$Pkgrel"
     else
-        echoreturn "${pkgver}-$pkgrel"
+        echoreturn "${Pkgver}-$Pkgrel"
     fi
 }
 
