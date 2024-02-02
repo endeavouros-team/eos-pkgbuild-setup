@@ -189,14 +189,16 @@ GetPkgbuildValue1() {
 
         pkgver)
             if declare -F pkgver &> /dev/null ; then
-                Pushd ${PKGBUILD%/*}
                 printf2 " running function pkgver() ... "
+
+                # We want to run pkgver() to get the correct pkgver.
+                # But first we must run makepkg because the needed git stuff hasn't been fetched yet...
+
+                Pushd ${PKGBUILD%/*}
 
                 makepkg --skipinteg -od &> /dev/null || DIE "$FUNCNAME: cannot determine 'pkgver' from $PKGBUILD."
 
-                # Seems that makepkg may incorrectly change pkgrel to 1.
-                # Here we work around this bug...
-                sed -E -i PKGBUILD -e "s|^pkgrel=[0-9\.]+|pkgrel=$pkgrel|"
+                # sed -E -i "$PKGBUILD" -e "s|^pkgrel=[0-9\.]+|pkgrel=$pkgrel|"       # Prevents makepkg from changing pkgrel to 1.
 
                 source "$PKGBUILD"
                 retvar="$(pkgver)"
