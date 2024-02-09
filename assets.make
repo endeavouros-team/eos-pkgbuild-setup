@@ -450,7 +450,7 @@ ListNameToPkgName()
             yes)
                 rm -rf "$pkgname"
                 yay -Ga "$pkgname" >/dev/null || DIE "'yay -Ga $pkgname' failed."
-                # rm -rf "$pkgname"/.git                          # not needed
+                Compare "$pkgname" "$pkgname/PKGBUILD"
                 ;;
         esac
     fi
@@ -472,6 +472,34 @@ ListNameToPkgName()
     fi
 
     pkgdirname="$pkgname"
+}
+
+Compare() {
+    # Compare new PKGBUILD from AUR to the saved PKGBUILD.
+
+    local PKGNAME="$1"
+    local pkgbuild_new="$2"
+    local pkgbuild_old="$HOME/.aur-pkgbuilds/$PKGNAME/PKGBUILD"
+
+    mkdir -p "${pkgbuild_old%/*}"
+
+    if [ -e "$pkgbuild_old" ] ; then
+        diff "$pkgbuild_old" "$pkgbuild_new" >/dev/null && return   # return if identical
+
+        HookIndicator "$hook_compare"
+
+        setsid /bin/meld "$pkgbuild_old" "$pkgbuild_new"
+        read -p "Continue $PROGNAME (Y/n): " >&2
+        case "$REPLY" in
+            [Nn]*) DIE "stopped due to the unacceptable PKGBUILD of $PKGNAME" ;;
+        esac
+    else
+        # Compare to a non-existing file!
+        # And wait here until ready.
+        HookIndicator "$hook_compare"
+        /bin/meld "$pkgbuild_old" "$pkgbuild_new"
+    fi
+    /bin/cp "$pkgbuild_new" "$pkgbuild_old"
 }
 
 LogStuff() {
@@ -1189,6 +1217,7 @@ Main2()
     local hook_pkgver="#"
     local hook_multiversion="+"
     local hook_yes="*"
+    local hook_compare="c"
     local hook_no=""                 # will contain strlen(hook_yes) spaces
     for xx in $(seq 1 ${#hook_yes}) ; do
         hook_no+=" "
