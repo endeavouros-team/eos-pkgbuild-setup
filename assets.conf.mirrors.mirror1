@@ -853,5 +853,5 @@ declare -A ASSET_PACKAGE_HOOKS=(
     # paper-icon-theme-git   _paper-icon-theme-git_hook
     # rate-mirrors           _rate-mirrors_hook
     # yad                    _yad_hook_add_gspell
-    yay                    _yay_hook_check_latest
+    # yay                    _yay_hook_check_latest
 )

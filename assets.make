@@ -918,6 +918,66 @@ _pkgbuilds_alt_hook() {
     echo2 "done."
 }
 
+Fix_PKGBUILD_if_changed() {
+    local out=$(/bin/git diff)        # used for detecting local changes in PKGBUILD files
+    local pkg
+    local changed_pkgs                # list of package names that have a changed PKGBUILD
+    local left                        # number of changed packages that have no "fix" yet
+
+    changed_pkgs="$(echo "$out" | grep -E "^... b/.*/PKGBUILD$" | sed -E 's|^... b/(.*)/PKGBUILD$|\1|')"   # which PKGBUILDs have changed
+    if [ "$changed_pkgs" ] ; then
+        left=$(echo "$changed_pkgs" | wc -l)
+    else
+        left=0
+    fi
+
+    case "$REPONAME" in
+        endeavouros-testing-dev)
+            for pkg in $changed_pkgs ; do
+                case "$pkg" in
+                    calamares-git)
+                        # Special handling for calamares-git in repo endavouros-testing-dev because its PKGBUILD has line:
+                        #    pkgver=.
+                        ((left--))                                                            # this is a known thing, we fix it here
+                        if [ "$(echo "$out" | grep "^-pkgver=\.$")" ] ; then                  # line 'pkgver=.' replaced?
+                            sed -i calamares-git/PKGBUILD -e "s|^pkgver=.*$|pkgver=.|"        # set it back to 'pkgver=.' before 'git pull'
+                            printf2 "PKGBUILD of calamares-git 'fixed'. "
+                        fi
+                        ;;
+                    # add possible other 'endeavouros-testing-dev' package PKGBUILD management here
+                esac
+            done
+            ;;
+        endeavouros)
+            for pkg in $changed_pkgs ; do
+                case "$pkg" in
+                    eos-lightdm-gtk-theme)                                                    # PKGBUILD was copied from ARM, don't change it here
+                        ((left--))
+                        ;;
+                    # add possible other 'endeavouros' package PKGBUILD management here
+                esac
+            done
+            ;;
+    esac
+
+    if [ $left -gt 0 ] ; then
+        # show unknown changes and let user fix them
+        echo2 "local $REPONAME/$PKGBUILDS has differences with the repository, please fix it if possible"
+        /bin/meld .
+        WantToContinue
+    fi
+}
+
+WantToContinue() {
+    while true ; do
+        read -p "==> Want to continue (Y/n)? " >&2
+        case "$REPLY" in
+            "" | [Yy]*) break ;;
+            [Nn]*) DIE "user wanted to stop now" ;;
+        esac
+    done
+}
+
 _pkgbuilds_eos_hook()
 {
     # A hook function to make sure local EndeavourOS PKGBUILDS are up to date.
@@ -926,6 +986,7 @@ _pkgbuilds_eos_hook()
 
     if [ -d "$ASSETSDIR/.$REPONAME/$PKGBUILDS/.git" ] ; then
         _ASSERT_ pushd "$ASSETSDIR/.$REPONAME/$PKGBUILDS"
+        Fix_PKGBUILD_if_changed
         printf2 "git pull... "
         _ASSERT_ git pull
     else
