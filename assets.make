@@ -918,6 +918,8 @@ _pkgbuilds_alt_hook() {
     echo2 "done."
 }
 
+PkgAdjusted() { printf2 "$pkg: planned adjustment. "; }
+
 Fix_PKGBUILD_if_changed() {
     local out=$(/bin/git diff)        # used for detecting local changes in PKGBUILD files
     local pkg
@@ -941,7 +943,7 @@ Fix_PKGBUILD_if_changed() {
                         ((left--))                                                            # this is a known thing, we fix it here
                         if [ "$(echo "$out" | grep "^-pkgver=\.$")" ] ; then                  # line 'pkgver=.' replaced?
                             sed -i calamares-git/PKGBUILD -e "s|^pkgver=.*$|pkgver=.|"        # set it back to 'pkgver=.' before 'git pull'
-                            printf2 "PKGBUILD of calamares-git 'fixed'. "
+                            PkgAdjusted
                         fi
                         ;;
                     # add possible other 'endeavouros-testing-dev' package PKGBUILD management here
@@ -951,8 +953,9 @@ Fix_PKGBUILD_if_changed() {
         endeavouros)
             for pkg in $changed_pkgs ; do
                 case "$pkg" in
-                    eos-lightdm-gtk-theme)                                                    # PKGBUILD was copied from ARM, don't change it here
+                    eos-lightdm-gtk-theme)                                                    # the package was copied from ARM, just accept it here
                         ((left--))
+                        PkgAdjusted
                         ;;
                     # add possible other 'endeavouros' package PKGBUILD management here
                 esac
