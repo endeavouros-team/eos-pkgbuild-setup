@@ -5,20 +5,6 @@
 #   - older: check if deletion of e.g. pamac-aur might remove also pamac-aur-git (names have same beginning)
 #   - better epoch handling
 
-
-DebugBreak() {
-    local from_function="${FUNCNAME[1]}"
-
-    case "$from_function" in
-        source) from_function="[PROGRAM]" ;;
-    esac
-
-    case "$DEBUG_BREAK" in
-        5) echo "Function '$FUNCNAME' <--- line ${BASH_LINENO[0]} function $from_function" ;;
-    esac
-    :  # this is the break line
-}
-
 echoreturn() { echo "$@" ; }     # for "return" values!
 
 echo2()      { echo   "$@" >&2 ; }    # output to stderr
@@ -150,6 +136,10 @@ GetPkgbuildValue() {       # this is used in assets.conf too!
     local PKGBUILD="$1"
     shift
 
+    if declare -F pkgver &> /dev/null ; then
+        unset -f pkgver                        # remove possible function from another PKGBUILD
+    fi
+
     source "$PKGBUILD" || return 1   # reading PKGBUILD may fail
 
     while [ "$1" ] ; do
@@ -200,8 +190,11 @@ GetPkgbuildValue1() {
 
                 # sed -E -i "$PKGBUILD" -e "s|^pkgrel=[0-9\.]+|pkgrel=$pkgrel|"       # Prevents makepkg from changing pkgrel to 1.
 
+                unset -f pkgver
                 source "$PKGBUILD"
                 retvar="$(pkgver)"
+                unset -f pkgver
+
                 Popd
                 retval2="$(echo "$retvar" | tail -n1)"   # $retvar may have 2 items in 2 lines !?
                 [ -n "$retval2" ] && retvar="$retval2"
@@ -1343,6 +1336,7 @@ Main2()
 
     RunPreHooks                 # may/should update local PKGBUILDs
     Assets_clone                # offer getting assets from github instead of using local ones
+    unset -f pkgver             # remove possible leftover pkgver() from any PKGBUILD
 
     # Check if we need to build new versions of packages.
     # To do that, we compare local asset versions to PKGBUILD versions.
@@ -1974,5 +1968,20 @@ Main() {
 
     Main2 "$@"
 }
+
+DebugBreak_not_used() {
+    local from_function="${FUNCNAME[1]}"
+
+    case "$from_function" in
+        source) from_function="[PROGRAM]" ;;
+    esac
+
+    case "$DEBUG_BREAK" in
+        5) echo "Function '$FUNCNAME' <--- line ${BASH_LINENO[0]} function $from_function" ;;
+    esac
+    :  # this is the break line
+}
+
+DebugBreak() { : ; }
 
 Main "$@"
