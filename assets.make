@@ -549,9 +549,13 @@ GetRemoteAssetNames() {
 }
 
 AskFetchingFromGithub() {
-    # printf2 "\n%s " "Fetch assets from github (Yes/no/force)?"
-    printf2 "\n%s " "Fetch assets from github (Y=only if different, n=no, f=yes)? "
-    read2
+    local -r msg="Fetch assets from github (Y=only if different, n=no, f=yes)? "
+    if [ "$fetch_timeout" ] ; then
+        read2 -p "$msg" -t "$fetch_timeout"
+    else
+        printf2 "\n%s " "$msg"
+        read2
+    fi
     case "$REPLY" in
         [yY]*|"")
             echo2 "==> Using remote assets if there are differences, otherwise local."
@@ -1186,13 +1190,14 @@ ListPkgsWithName() {
 
 Usage() {
     cat <<EOF >&2
-$PROGNAME: Build packages and transfer results to github.
+$PROGNAME: Build packages and transfer them to github.
 
 $PROGNAME [ options ]
 Options:
     -n  | -nl | --dryrun-local  Show what would be done, but do nothing. Use local assets.
     -nn | -nr | --dryrun        Show what would be done, but do nothing.
     -ad | --allow-downgrade     New package may have smaller version number.
+    --fetch-timeout=X | -T=X    Timeout (in seconds) when asking to fetch remote assets (default: no timeout).
     --pkgnames="X"              X is a space separated list of packages to use instead of PKGNAMES array in assets.conf.
     --repoup                    (Advanced) Force update of repository database files.
     --pkgdiff                   Show changelog for modified packages.
@@ -1263,18 +1268,19 @@ Main2()
     local pkgdiff=unknown            # yes=show AUR diff, no=don't show, unknown=need to ask for yes or no
     local filelist_txt
     local use_filelist               # yes or no
-    local ask_timeout=60
     local allow_downgrade=no
     local PKG_DIFFS=()
     local mirror_check_wait=180
     local use_release_assets         # currently only for [endeavouros] repo
     local save_folder=""
     local PKGNAMES_PARAMETER=""
+    local fetch_timeout=""
+    local -r ask_timeout=60
 
-    local hook_pkgver="#"
-    local hook_multiversion="+"
-    local hook_yes="*"
-    local hook_compare="c"
+    local -r hook_pkgver="#"
+    local -r hook_multiversion="+"
+    local -r hook_yes="*"
+    local -r hook_compare="c"
     local hook_no=""                 # will contain strlen(hook_yes) spaces
     for xx in $(seq 1 ${#hook_yes}) ; do
         hook_no+=" "
@@ -1291,6 +1297,7 @@ Main2()
                 --allow-downgrade | -ad)   allow_downgrade=yes ;;
 
                 --pkgnames=*)              PKGNAMES_PARAMETER="$xx" ;;
+                --fetch-timeout=* | -T=*)  fetch_timeout="${xx#*=}" ;;
 
                 # currently not used!
                 --mirrorcheck=*)           mirror_check_wait="${xx#*=}";;
