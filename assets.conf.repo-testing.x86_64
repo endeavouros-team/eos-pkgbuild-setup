@@ -40,7 +40,8 @@ local PKGNAMES=(                                    # actually: dir names for pa
     eos-pkgbuild-setup
 )
 
-PKGNAMES_WAIT=(calamares-git)
+# test before plasma 6 is mainstream:
+pacman-conf --repo-list | grep kde-unstable >/dev/null || PKGNAMES_WAIT=(calamares-git)
 
 # Hook functions are run at the beginning of assets.make.
 local ASSET_HOOKS=(
