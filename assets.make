@@ -1406,7 +1406,11 @@ Main2()
 
             if IsInWaitList "$xx" "$tmp" ; then
                 ((items_waiting++))
-                ShowResult "$WAITING ($tmpcurr ==> $tmp)" "$hookout"
+                if [ "$tmpcurr" = "$tmp" ] ; then
+                    ShowResult "$OK ($tmpcurr) {in wait list}" "$hookout"
+                else
+                    ShowResult "$WAITING ($tmpcurr ==> $tmp)" "$hookout"
+                fi
                 continue
             fi
             if [ $cmpresult -eq 0 ] ; then
