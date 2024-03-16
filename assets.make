@@ -1264,7 +1264,6 @@ Main2()
     local xx yy zz
     local repoup=0
     local pkgver_suffix=""
-    local reposig                    # 1 = sign repo too, 0 = don't sign repo
     local pkgdiff=unknown            # yes=show AUR diff, no=don't show, unknown=need to ask for yes or no
     local filelist_txt
     local use_filelist               # yes or no
@@ -1315,6 +1314,7 @@ Main2()
     local PKGNAMES_WAIT=()
     local EOS_ROOT=""                       # configures the base folder for all EOS stuff
     local _PACKAGER=""
+    local REPOSIG=0                         # 1 = sign repo too, 0 = don't sign repo
 
     source /etc/eos-pkgbuild-setup.conf     # sets the base folder of everything
     [ -n "$EOS_ROOT" ] || DIE "EOS_ROOT is not set in /etc/eos-pkgbuild-setup.conf!"
@@ -1529,11 +1529,6 @@ Main2()
         done
     fi
 
-    case "$REPONAME" in
-        endeavouros | endeavouros-testing-dev) reposig=0 ;;
-        *)                                     reposig=1 ;;
-    esac
-
     if [ -n "$built" ] || [ "$repoup" = "1" ] ; then
 
         # We have something built to be sent to github, or we want to update repo to github.
@@ -1656,15 +1651,15 @@ Main2()
             fi
         fi
 
-        if [ $reposig -eq 1 ] ; then
+        if [ $REPOSIG -eq 1 ] ; then
             echo2 "Signing repo $REPONAME ..."
-            repo-add --sign --key $SIGNER "$ASSETSDIR/$REPONAME".db.tar.$REPO_COMPRESSOR >/dev/null
+            repo-add --sign --key "$SIGNER" "$ASSETSDIR/$REPONAME".db.tar.$REPO_COMPRESSOR >/dev/null
         fi
         for xx in db files ; do
             rm -f "$ASSETSDIR/$REPONAME".$xx.tar.$REPO_COMPRESSOR.old{,.sig}
             rm -f "$ASSETSDIR/$REPONAME".$xx
             cp -a "$ASSETSDIR/$REPONAME".$xx.tar.$REPO_COMPRESSOR     "$ASSETSDIR/$REPONAME".$xx
-            if [ $reposig -eq 1 ] ; then
+            if [ $REPOSIG -eq 1 ] ; then
                 rm -f "$ASSETSDIR/$REPONAME".$xx.sig
                 cp -a "$ASSETSDIR/$REPONAME".$xx.tar.$REPO_COMPRESSOR.sig "$ASSETSDIR/$REPONAME".$xx.sig
             fi
@@ -1870,7 +1865,7 @@ ManageGithubReleaseAssets() {
             "$REPONAME".{db,files}
             "$REPONAME".{db,files}.tar.$REPO_COMPRESSOR
         )
-        if [ $reposig -eq 1 ] ; then
+        if [ $REPOSIG -eq 1 ] ; then
             assets+=("$REPONAME".{db,files}.tar.$REPO_COMPRESSOR.sig)
             assets+=("$REPONAME".{db,files}.sig)
         fi
