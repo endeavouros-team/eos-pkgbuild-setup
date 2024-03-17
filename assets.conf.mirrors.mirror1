@@ -13,7 +13,7 @@ local RELEASE_TAGS=(
 )
 
 ## user to sign packages
-local SIGNER="EndeavourOS"
+local SIGNER="manuel@endeavouros.com"    # "EndeavourOS"
 
 ## general options
 local USE_GENERATED_FILELIST="no"                   # may generate 'repofiles.txt' into the repo

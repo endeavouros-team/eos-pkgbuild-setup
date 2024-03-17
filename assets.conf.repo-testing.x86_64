@@ -9,7 +9,7 @@ local REPONAME="endeavouros-testing-dev"
 local RELEASE_TAGS=(endeavouros-pkgbuild-tools)
 
 ## user to sign packages
-local SIGNER="EndeavourOS"
+local SIGNER="manuel@endeavouros.com"         # "EndeavourOS"
 
 ## local folders
 local USE_RELEASE_ASSETS=yes
