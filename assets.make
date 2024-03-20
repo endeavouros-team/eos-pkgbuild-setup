@@ -1370,7 +1370,7 @@ Main2()
     local hookout=""
     local -r WARNING="${RED}WARNING${RESET}"
     local -r OK="${BLUE}OK${RESET}"
-    local -r WAITING="${CYAN}WAITING${RESET}"
+    local -r WAITING="${CYAN}WAITING NEWER VERSION${RESET}"
     local -r CHANGED="${YELLOW}CHANGED${RESET}"
 
     if [ "$repoup" = "0" ] ; then
