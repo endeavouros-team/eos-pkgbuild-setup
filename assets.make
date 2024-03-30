@@ -182,8 +182,10 @@ GetPkgbuildValue1() {
         pkgver)
             if declare -F pkgver &> /dev/null ; then
                 # printf2 " running function pkgver() ... "
-                CursorLeft 2
-                echo2 -n "p "
+                if [ $listing_updates = yes ] ; then
+                   CursorLeft 2
+                   echo2 -n "p "
+                fi
 
                 # We want to run pkgver() to get the correct pkgver.
                 # But first we must run makepkg because the needed git stuff hasn't been fetched yet...
@@ -1263,6 +1265,7 @@ Main2()
     test -n "$PKGEXT" && unset PKGEXT   # don't use env vars!
 
     local buildStartTime
+    local listing_updates=""
 
     local cmd=""
     local xx yy zz
@@ -1374,8 +1377,10 @@ Main2()
     local hookout=""
     local -r WARNING="${RED}WARNING${RESET}"
     local -r OK="${BLUE}OK${RESET}"
-    local -r WAITING="${CYAN}WAITING NEWER VERSION${RESET}"
+    local -r WAITING="${CYAN}VERSION SKIP${RESET}"
     local -r CHANGED="${YELLOW}CHANGED${RESET}"
+
+    listing_updates=yes
 
     if [ "$repoup" = "0" ] ; then
 
@@ -1471,6 +1476,8 @@ Main2()
             ;;
     esac
 
+    listing_updates=no
+    
     if [ "$repoup" = "0" ] ; then
         # build if newer versions exist. When building, collect removables and builds.
 
