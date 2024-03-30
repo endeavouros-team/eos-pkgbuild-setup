@@ -1217,6 +1217,7 @@ EOF
 IsInWaitList() {
     local pkg="$1"
     local newver="$2"  # optional!
+    local xx
 
     if [ -n "$PKGNAMES_WAIT" ] ; then
         for xx in "${PKGNAMES_WAIT[@]}" ; do
@@ -1498,8 +1499,8 @@ Main2()
             if DowngradeProbibited "$cmpresult" "$allow_downgrade" ; then
                 continue
             fi
-            if IsInWaitList "$xx" "${newv['$pkgdirname']}" ; then
-                echo2 "==> $xx is in the wait list, skipping build."
+            if IsInWaitList "$xx" "${newv[$pkgdirname]}" ; then
+                echo2 "==> skipped: $xx"
                 continue
             fi
 
