@@ -155,8 +155,6 @@ PKGNAMES=(                                        # Alphabetically ordered.
 
     # lsb-release
 
-    mkinitcpio-openswap/aur
-
     nvidia-hook
     nvidia-inst
 
