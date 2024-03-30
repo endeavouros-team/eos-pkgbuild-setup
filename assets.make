@@ -151,6 +151,8 @@ GetPkgbuildValue() {       # this is used in assets.conf too!
     done
 }
 
+CursorLeft() { local num="$1"; echo2 -en "\033[${num}D"; }  # move cursor left $num chars
+
 GetPkgbuildValue1() {
     local varname="$1"
     local -n retvar="$2"
@@ -179,7 +181,9 @@ GetPkgbuildValue1() {
 
         pkgver)
             if declare -F pkgver &> /dev/null ; then
-                printf2 " running function pkgver() ... "
+                # printf2 " running function pkgver() ... "
+                CursorLeft 2
+                echo2 -n "p "
 
                 # We want to run pkgver() to get the correct pkgver.
                 # But first we must run makepkg because the needed git stuff hasn't been fetched yet...
