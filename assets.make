@@ -183,8 +183,9 @@ GetPkgbuildValue1() {
             if declare -F pkgver &> /dev/null ; then
                 # printf2 " running function pkgver() ... "
                 if [ $listing_updates = yes ] ; then
-                   CursorLeft 2
-                   echo2 -n "p "
+                    CursorLeft 2
+                    HookIndicator "$hook_pkgver_func" yes
+                    # echo2 -n "p "
                 fi
 
                 # We want to run pkgver() to get the correct pkgver.
@@ -405,16 +406,19 @@ JustPkgname()
 
 HookIndicator() {
     local mark="$1"
-    if [ "$fetch" = "yes" ] ; then
+    local force="$2"
+    if [ "$fetch" = "yes" ] || [ "$force" = "yes" ] ; then
         echo2 -n "$mark "
     fi
 }
 
 ExplainHookMarks() {
     printf2 "\nPossible markings above mean indications from %s:\n" "$ASSETS_CONF"
-    printf2 "    %s = a package hook was executed.\n" "$hook_yes"
     printf2 "    %s = a package hook changed pkgver in PKGBUILD.\n" "$hook_pkgver"
+    printf2 "    %s = execute pkgver() from PKGBUILD.\n" "$hook_pkgver_func"                             # not a hook!
     printf2 "    %s = a package hook found many local versions, used latest.\n" "$hook_multiversion"
+    printf2 "    %s = a package hook was executed.\n" "$hook_yes"
+    printf2 "    %s = compare new and existing PKGBUILD files from AUR.\n" "$hook_compare"
     printf2 "\n"
 }
 
@@ -1200,13 +1204,14 @@ $PROGNAME: Build packages and transfer them to github.
 
 $PROGNAME [ options ]
 Options:
-    -n  | -nl | --dryrun-local  Show what would be done, but do nothing. Use local assets.
-    -nn | -nr | --dryrun        Show what would be done, but do nothing.
-    -ad | --allow-downgrade     New package may have smaller version number.
+    --allow-downgrade, -ad      New package may have smaller version number.
+    --dryrun-local, -n          Show what would be done, but do nothing. Use local assets.
+    --dryrun, -nn               Show what would be done, but do nothing.
+    --explain-hook-marks, -e    Explain markings on hooks.
     --fetch-timeout=X | -T=X    Timeout (in seconds) when asking to fetch remote assets (default: no timeout).
     --pkgnames="X"              X is a space separated list of packages to use instead of PKGNAMES array in assets.conf.
-    --repoup                    (Advanced) Force update of repository database files.
     --pkgdiff                   Show changelog for modified packages.
+    --repoup                    (Advanced) Force update of repository database files.
 EOF
 #   --versuffix=X               Append given suffix (X) to pkgver of PKGBUILD.
 #   --mirrorcheck=X             X is the time (in seconds) to wait before starting the mirrorcheck.
@@ -1271,6 +1276,7 @@ Main2()
     local cmd=""
     local xx yy zz
     local repoup=0
+    local explain_hooks=no
     local pkgver_suffix=""
     local pkgdiff=unknown            # yes=show AUR diff, no=don't show, unknown=need to ask for yes or no
     local filelist_txt
@@ -1285,6 +1291,7 @@ Main2()
     local -r ask_timeout=60
 
     local -r hook_pkgver="#"
+    local -r hook_pkgver_func="p"
     local -r hook_multiversion="+"
     local -r hook_yes="*"
     local -r hook_compare="c"
@@ -1301,22 +1308,38 @@ Main2()
                 --dryrun | -nr | -nn)      cmd=dryrun ;;
                 --repoup)                  repoup=1 ;;                  # sync repo even when no packages are built
                 --pkgdiff)                 pkgdiff=yes ;;
+                -e | --explain-hook-marks) explain_hooks=yes ;;
                 --allow-downgrade | -ad)   allow_downgrade=yes ;;
 
                 --pkgnames=*)              PKGNAMES_PARAMETER="$xx" ;;
                 --fetch-timeout=* | -T=*)  fetch_timeout="${xx#*=}" ;;
 
+                --dump-options)
+                    local all_options=(
+                        --allow-downgrade
+                        --dryrun-local
+                        --dryrun
+                        --explain-hook-marks
+                        --fetch-timeout=
+                        --pkgnames=
+                        --pkgdiff
+                        --repoup
+                    )
+                    echo "${all_options[*]}"
+                    exit 0
+                    ;;
+
                 # currently not used!
                 --mirrorcheck=*)           mirror_check_wait="${xx#*=}";;
                 --versuffix=*)             pkgver_suffix="${xx#*=}" ;;
 
-                *) Usage 0  ;;
+                -h | --help | *) Usage 0  ;;
             esac
         done
     fi
+    eos-connection-checker || DIE "internet connection is not available."
 
     test -r $ASSETS_CONF || DIE "cannot find local file $ASSETS_CONF"
-
 
     local PKGNAMES=()
     local PKGNAMES_WAIT=()
@@ -1464,7 +1487,7 @@ Main2()
             printf2   "No PKGBUILD:    %s\n" "$no_pkgbuild_count"
         fi
 
-        if false ; then
+        if [ "$explain_hooks" = "yes" ] ; then
             ExplainHookMarks
         else
             printf2 "\n"
@@ -1939,8 +1962,6 @@ Main() {
     local -r _first_arg="$1"
     local fail=0
 
-    eos-connection-checker || DIE "internet connection is not available."
-
     case "$_first_arg" in
         --dir=*)             # user wants to change to the given folder
             cd "${_first_arg#*=}" || DIE "'cd ${_first_arg#*=}' failed."
@@ -1977,10 +1998,8 @@ Main() {
         echo2 "PACKAGER: $PACKAGER"
     fi
 
-    local verfile=/usr/share/endeavouros/scripts/eos-pkgbuild-setup.version
-    if [ -r $verfile ] ; then
-        echo2 "VERSION: $(grep ^VERSION= $verfile | cut -d '=' -f 2)"
-    fi
+    local verfile=/etc/eos-pkgbuild-setup.version
+    [ -r $verfile ] && echo2 "VERSION: $(< $verfile)"
 
     DebugBreak
 
