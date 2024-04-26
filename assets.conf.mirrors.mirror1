@@ -196,7 +196,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
 
 if false ; then
     PKGNAMES=(
-        yad
+        eos-lightdm-gtk-theme
     )
 fi
 
@@ -330,6 +330,7 @@ _rate-mirrors_hook() {
 }
 
 _dracut_hook() {
+    # Inform if the Arch version if not older than the EndeavourOS version
     local PKGBUILD="$PKGBUILD_ROOTDIR"/"$(__generic_get_pkgname $FUNCNAME)"/PKGBUILD
     local eos_pkgver=""
     local eos_pkgrel=""
@@ -833,22 +834,22 @@ _assets_download_break() {
 }
 
 declare -A ASSET_PACKAGE_HOOKS=(
-    assets_mirrors         _assets_download_break    # special hook
+    assets_mirrors         _assets_download_break                          # special hook
 
-    eos-bash-shared        _eos-bash-shared_hook_check_ksetwallpaper_py
-    eos-lightdm-gtk-theme  _eos-lightdm-gtk-theme_hook
-    paru                   _paru_hook
-    dracut                 _dracut_hook
+    eos-bash-shared        _eos-bash-shared_hook_check_ksetwallpaper_py    # Check if we have the latest version of file ksetwallpaper.py.
+    dracut                 _dracut_hook                                    # Inform if the Arch version if not older than the EndeavourOS version
 
-    # bashdb                 _bashdb_hook                                           # no more needed
+    # bashdb                 _bashdb_hook                                  # no more needed
     # budgie-control-center  _budgie-control-center_hook
     # ckbcomp                _ckbcomp_hook
     # ckbcomp                _ckbcomp_hook_change_version
     # downgrade              _downgrade_hook_check_latest
+    # eos-lightdm-gtk-theme  _eos-lightdm-gtk-theme_hook                   # Clone package source of eos-lightdm-gtk-theme from EndeavourOS ARM
     # inxi                   _inxi_hook_check_latest
     # kalu                   _kalu_hook_fix_files
     # nvidia-installer-db    _nvidia-installer-db_hook
     # paper-icon-theme-git   _paper-icon-theme-git_hook
+    # paru                   _paru_hook
     # rate-mirrors           _rate-mirrors_hook
     # yad                    _yad_hook_add_gspell
     # yay                    _yay_hook_check_latest

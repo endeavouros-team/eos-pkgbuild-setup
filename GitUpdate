@@ -1,0 +1,305 @@
+#!/bin/bash
+#
+# Copy built packages from old repo to new repo
+# and if changed, transfer to github.
+
+echo1() { echo "$@" ; }        # for "return" values from functions (output to stdout)
+echo2() { echo "$@" >&2 ; }    # output to stderr
+read2() { read "$@" >&2 ; }    # output to stderr
+
+DIE() {
+    echo2 "Error: $1"
+    exit 1
+}
+
+_date() {
+    date -Ru | tr -d ',' | awk '{print $1,$3,$2,$5,"UTC",$4}'
+}
+
+StateUpdate() {
+    local statefile=state
+    local stateval="$(head -n 1 $statefile)"
+    if [ -n "$(echo "$stateval" | awk '{print $2}')" ] ; then
+        DIE "file $PWD/state file is corrupted!"
+    fi
+    #Random ID generator, because the incrementing value is predictable
+    local NEW_UUID="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+
+    echo $((stateval+1))                       > $statefile
+    echo "$NEW_UUID"                          >> $statefile
+    _date >> $statefile
+}
+
+GetRepoName() {
+    local xx
+    reponame="$(basename "$PWD")"
+    case "$reponame" in
+        repo | eos-tools)
+            reponame="$(/usr/bin/ls -1F | grep "/$" | tr -d '/')" ;;
+    esac
+    case "$(echo "$reponame" | wc -l)" in
+        0) return 1 ;;
+        1) echo1 "$reponame" ;;
+        *)
+            echo2 "Potential repo names:"
+            while true ; do
+                echo2 "$reponame" | sed 's|^|    |'
+                read2 -p "Select reponame: "
+                if [ -n "$REPLY" ] && [ -n "$(echo "$reponame" | grep "^$REPLY$")" ]; then
+                    echo1 "$REPLY"
+                    return
+                fi
+                echo2 "sorry, '$REPLY' is none of the above!"
+            done
+            ;;
+    esac
+}
+
+CreateExcludes() {
+    local xx
+    local files="$(/usr/bin/ls -1a "$srcdir")"
+
+    for xx in $files ; do
+        case "$xx" in
+            *.sig | *.xz | *.zst | *.db | *.files) ;;  # these we want to diff
+            . | ..) ;;                                 # not directories
+            *) excludes+=" -x $xx" ;;                  # not these files/dirs either
+        esac
+    done
+}
+
+CheckDiff() {
+    case "$reponame" in
+        "")
+            DIE "cannot determine reponame!"
+            ;;
+        endeavouros)
+            statefile="$PWD/state"
+            test -r "$statefile" && has_statefile=yes || DIE "file '$statefile' is missing!"
+
+            srcdir="$ASSETSDIR"
+            dstdir="$PWD/$reponame/x86_64"
+            git_adds="$reponame state"
+            ;;
+        endeavouros-testing-dev)                           # was eos-tools
+            #srcdir="$PWD/../_BUILD_/repo-testing.x86_64"
+            srcdir="$ASSETSDIR"
+            dstdir="$PWD/$reponame"                        # was endeavouros-pkgtools
+            git_adds="$(basename "$dstdir")"
+            ;;
+        *)
+            if true ; then
+                statefile="$PWD/state"
+                test -r "$statefile" && has_statefile=yes || DIE "file '$statefile' is missing!"
+            fi
+            srcdir="$ASSETSDIR"
+            dstdir="$PWD/repo"
+            if [ $has_statefile = yes ] ; then
+                git_adds="$(basename "$dstdir") state"
+            else
+                git_adds="$(basename "$dstdir")"
+            fi
+            ;;
+    esac
+
+    test -d "$gitdir"/.git          || DIE "folder '$gitdir/.git' not found!"
+    test -r "$srcdir"/$reponame.db  || DIE "db file '$srcdir/$reponame.db' not found!"
+    test -d "$dstdir"               || DIE "folder '$dstdir' not found!"
+
+    local excludes=""
+    CreateExcludes
+
+    LANG=C diff "$srcdir" "$dstdir" $excludes > $file_x86_64_diff
+    diff_x86_64=$?
+    case "$diff_x86_64" in
+        2) DIE "'diff $srcdir $dstdir' failed." ;;
+    esac
+
+    # ARM news check!
+    if [ "$reponame" = "endeavouros" ] && [ "$handle_also_arm" = "yes" ] ; then
+        ArmPkgCheck check $file_arm_diff
+        diff_arm=$?
+        case "$diff_arm" in
+            2) DIE "ArmPkgCheck check failed." ;;
+        esac
+    fi
+}
+
+ReplaceAssets() {
+    case "$reponame" in
+        endeavouros)
+            if [ $diff_arm -eq 1 ] ; then
+                ArmPkgCheck copy || DIE "ArmPkgCheck copy failed."
+            fi
+            if [ $diff_x86_64 -eq 1 ] ; then
+                rm -f "$dstdir"/*.{db,files,sig,xz,zst}
+                cp -p "$srcdir"/*.{db,files,sig,xz,zst} "$dstdir"
+            fi
+            ;;
+        *)
+            rm -f "$dstdir"/*.{db,files,sig,xz,zst}
+            cp -p "$srcdir"/*.{db,files,sig,xz,zst} "$dstdir"
+            ;;
+    esac
+}
+
+MirrorStateUpdate() {
+    cd "$gitdir"
+    if [ "$has_statefile" = "yes" ] ; then
+        StateUpdate
+    fi
+}
+
+RunOnlyIfAllowed() {
+    local cmd="$1"
+    while true ; do
+        read2 -p "Run '$cmd' now (y/n)? "
+        case "$REPLY" in
+            [yY]*)
+                $cmd || DIE "'$cmd' failed."
+                break
+                ;;
+            [nN]*)
+                break
+                ;;
+        esac
+    done
+}
+
+GitUpdate() {
+    if false && [ "$reponame" = "endeavouros" ] ; then
+	local file
+	printf2 "==> You need to transfer the following files to github:"
+	for file in $git_adds ; do
+	    printf "       %s\n" "$file"
+	done
+	echo2 "==> Commands 'cd $gitdir ; git push', or use the browser for the same."
+	return
+    fi
+
+    local commit_msg="$1"
+
+    cd "$gitdir"
+    echo2 ""
+    echo2 "Adding files to github."
+    echo2 ""
+    # RunOnlyIfAllowed "git pull"
+    git add $git_adds
+    #git commit -m "."          # dummy commit message
+    git commit -m "$commit_msg"
+    echo2 ""
+    git push || {
+        echo2 "You should run commands 'cd $PWD ; git push'"
+    }
+}
+
+GetArmCommitMessage() {
+    # Manually given Arm commits may not have the message, so get it from the github commit messages, or actual commits.
+
+    # Get commit message from github arm commit message.
+    local data=$(curl -Lsm 10 -o- https://github.com/endeavouros-arm/repo/commits/master/endeavouros)
+    local commit_msg=$(echo "$data" | grep -w "open markdown-title" | head -n1 | sed -e 's|.*">\([^<]*\)</a>|\1|')
+
+    if [ -z "$commit_msg" ] ; then
+        # Show actual committed packages from the github ARM page.
+        local commit=$(echo "$data" | grep -w "open markdown-title" | head -n1 | sed -e 's|.*/repo/commit/\(.*\)">.*|\1|')
+        data=$(curl -Lsm 10 -o- "https://github.com/endeavouros-arm/repo/commit/$commit")
+        readarray -t data <<< $(echo "$data" | grep "pkg.tar.zst<" | grep -w "a href" | sed 's|.*>endeavouros/\(.*\)</a>|\1|')
+        commit_msg="Updated"
+        for ((ix=1; ix < ${#data[@]}; ix=ix+2)) ; do
+            commit_msg+=" ${data[ix]}"
+        done
+    fi
+    echo "$commit_msg"
+}
+
+Main()
+{
+    local commit_msg="$1"
+    local ASSETSDIR="$2"
+    local commit_msg_arm=""
+    local handle_also_arm=no          # yes or no; will be no later
+
+    # [ -f .GitUpdate ] || DIE "no .GitUpdate file in folder $PWD"
+    [ -d .git ]       || DIE "no .git folder in $PWD"
+    [ -L .git ]       && DIE ".git must not be symlink in $PWD"
+
+    local gitdir="$PWD"                     # has .git folder
+    local reponame="$(GetRepoName)"
+    local has_statefile=no
+    local srcdir=""
+    local dstdir=""
+    local git_adds=""
+    local statefile=""
+    local diff_x86_64=0                     # 1 = has updates
+    local diff_arm=0                        # 1 = has updates
+    local file_arm_diff=/tmp/diffs_arm.txt
+    local file_x86_64_diff=/tmp/diffs_x86_64.txt
+
+    CheckDiff
+
+    if [ $diff_x86_64 -ne 0 ] ; then
+        echo2 "==> x86_64 diffs:"
+        cat $file_x86_64_diff >&2
+        rm -f $file_x86_64_diff
+    fi
+    if [ $diff_arm -ne 0 ] ; then
+        echo2 "==> ARM diffs:"
+        cat $file_arm_diff >&2
+        rm -f $file_arm_diff
+    fi
+
+    if [ $diff_x86_64 -ne 0 ] || [ $diff_arm -ne 0 ] ; then
+        printf2 "\nChanges detected and shown above.\nWill replace local assets after 'git pull', then sync all to github.\n\n"
+        read2 -p "Continue (Y/n)? "
+        case "$REPLY" in
+            [nN]*) DIE "aborted!";;
+        esac
+
+        # x86_64 always should have a commit message, but Arm may not have it.
+        if [ $diff_arm -ne 0 ] ; then
+            if [ -n "$commit_msg" ] ; then
+                echo2 "Current commit message: '$commit_msg'"
+            fi
+            read2 -p "A commit message for ARM changes is required. Get it automatically (Y/n)? "
+            case "$REPLY" in
+                [Yy]* | "")
+                    commit_msg_arm="ARM: $(GetArmCommitMessage)"
+                    printf2 "==> Commit message for ARM:\n    %s\n" "$commit_msg_arm"
+                    read2 -p "OK to continue (Y/n)? "
+                    case "$REPLY" in
+                        [nN]*) DIE "aborted!" ;;
+                    esac
+                    ;;
+                *)
+                    DIE "no commit message for ARM changes."
+                    ;;
+            esac
+            if [ -n "$commit_msg" ] ; then
+                commit_msg+=", $commit_msg_arm"
+            else
+                commit_msg="$commit_msg_arm"
+            fi
+        fi
+        if [ -z "$commit_msg" ] ; then
+            read2 -p "Commit message is still empty. Give it now: " commit_msg
+        fi
+        if [ -z "$commit_msg" ] ; then
+            DIE "cannot continue without a commit message!"
+        fi
+
+        cd "$gitdir"
+        RunOnlyIfAllowed "git pull"
+
+        if [ $has_statefile = yes ] && [ $diff_x86_64 -ne 0 ] ; then
+            MirrorStateUpdate
+        fi
+
+        ReplaceAssets
+        GitUpdate "$commit_msg"
+    else
+        echo2 "No changes."
+    fi
+}
+
+Main "$@"
