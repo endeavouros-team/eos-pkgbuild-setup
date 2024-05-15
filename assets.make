@@ -453,7 +453,7 @@ ListNameToPkgName()
             yes)
                 rm -rf "$pkgname"
                 yay -Ga "$pkgname" >/dev/null || DIE "'yay -Ga $pkgname' failed."
-                Compare "$pkgname" "$pkgname/PKGBUILD"
+                Compare "$pkgname" "$pkgname/PKGBUILD" || return 1
                 ;;
         esac
     fi
@@ -488,6 +488,10 @@ Compare() {
 
     if [ -e "$pkgbuild_old" ] ; then
         diff "$pkgbuild_old" "$pkgbuild_new" >/dev/null && return   # return if identical
+        if [ "${SKIP_UNACCEPTABLE_PKGBUILD[$PKGNAME]}" ] ; then
+            echo2 "  skip unacceptable PKGBUILD"
+            return 1
+        fi
 
         HookIndicator "$hook_compare"
 
@@ -1346,6 +1350,7 @@ Main2()
     local EOS_ROOT=""                       # configures the base folder for all EOS stuff
     local _PACKAGER=""
     local REPOSIG=0                         # 1 = sign repo too, 0 = don't sign repo
+    local SKIP_UNACCEPTABLE_PKGBUILD=()
 
     source /etc/eos-pkgbuild-setup.conf     # sets the base folder of everything
     [ -n "$EOS_ROOT" ] || DIE "EOS_ROOT is not set in /etc/eos-pkgbuild-setup.conf!"
@@ -1414,7 +1419,7 @@ Main2()
         for xx in "${PKGNAMES[@]}" ; do
             ShowIndented "$(JustPkgname "$xx")" 1
             hookout=""
-            ListNameToPkgName "$xx" yes                                         # sets pkgdirname and hookout
+            ListNameToPkgName "$xx" yes || continue                                         # sets pkgdirname and hookout
             [ -n "$pkgdirname" ] || DIE "converting or fetching '$xx' failed"
             PkgbuildExists "$pkgdirname" "line $LINENO" || continue
 
