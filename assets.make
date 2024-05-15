@@ -488,24 +488,25 @@ Compare() {
 
     if [ -e "$pkgbuild_old" ] ; then
         diff "$pkgbuild_old" "$pkgbuild_new" >/dev/null && return   # return if identical
-        if [ "${SKIP_UNACCEPTABLE_PKGBUILD[$PKGNAME]}" ] ; then
-            echo2 "  skip unacceptable PKGBUILD"
-            return 1
-        fi
-
-        HookIndicator "$hook_compare"
-
-        setsid /bin/meld "$pkgbuild_old" "$pkgbuild_new"
-        read -p "Continue $PROGNAME (Y/n): " >&2
-        case "$REPLY" in
-            [Nn]*) DIE "stopped due to the unacceptable PKGBUILD of $PKGNAME" ;;
-        esac
-    else
-        # Compare to a non-existing file!
-        # And wait here until ready.
-        HookIndicator "$hook_compare"
-        /bin/meld "$pkgbuild_old" "$pkgbuild_new"
     fi
+
+    HookIndicator "$hook_compare"
+    /bin/meld "$pkgbuild_old" "$pkgbuild_new"
+
+    if [ -e "$pkgbuild_old" ] ; then
+        # Skip copying if package is marked as unacceptable, or user wants to skip.
+
+        if [ "${SKIP_UNACCEPTABLE_PKGBUILD[$PKGNAME]}" ] ; then
+            echo2 "SKIP (unacceptable PKGBUILD)"
+            return 1
+        else
+            read -p "Continue $PROGNAME (Y/n): " >&2
+            case "$REPLY" in
+                [Nn]*) DIE "stopped due to the unacceptable PKGBUILD of $PKGNAME" ;;
+            esac
+        fi
+    fi
+
     /bin/cp "$pkgbuild_new" "$pkgbuild_old"
 }
 
