@@ -136,9 +136,9 @@ GetPkgbuildValue() {       # this is used in assets.conf too!
     local PKGBUILD="$1"
     shift
 
-    if declare -F pkgver &> /dev/null ; then
+    while declare -F pkgver &> /dev/null ; do
         unset -f pkgver                        # remove possible function from another PKGBUILD
-    fi
+    done
 
     source "$PKGBUILD" || return 1   # reading PKGBUILD may fail
 
@@ -197,9 +197,13 @@ GetPkgbuildValue1() {
 
                 # sed -E -i "$PKGBUILD" -e "s|^pkgrel=[0-9\.]+|pkgrel=$pkgrel|"       # Prevents makepkg from changing pkgrel to 1.
 
-                unset -f pkgver
-                source "$PKGBUILD"
-                retvar="$(pkgver)"
+                if false ; then
+                    unset -f pkgver
+                    source "$PKGBUILD"
+                    retvar="$(pkgver)"
+                else
+                    retvar=$(grep ^pkgver= "$PKGBUILD" | awk '{print $1}' | sed 's|^pkgver=||')
+                fi
                 unset -f pkgver
 
                 Popd
@@ -218,14 +222,14 @@ GetPkgbuildValue1() {
 
 IsListedPackage() {
     # Is a package one of the listed packages in PKGNAMES?
-    local pkgname="$1"
-    printf "%s\n" "${PKGNAMES[@]}" | grep -P "^$pkgname/aur$|^$pkgname$" >/dev/null
+    local Pkgname="$1"
+    printf "%s\n" "${PKGNAMES[@]}" | grep -P "^$Pkgname/aur$|^$Pkgname$" >/dev/null
 }
 
 IsAurPackage() {
     # Determine AUR from PKGNAMES array directly since we don't have PKGBUILD yet.
-    local pkgname="$1"
-    printf "%s\n" "${PKGNAMES[@]}" | grep "^$pkgname/aur$" >/dev/null
+    local Pkgname="$1"
+    printf "%s\n" "${PKGNAMES[@]}" | grep "^$Pkgname/aur$" >/dev/null
 }
 
 HandlePossibleEpoch() {
@@ -233,7 +237,7 @@ HandlePossibleEpoch() {
     # So if a package has an epoch value in PKGBUILD, return a new fixed name for a package
     # fetched from github release assets.
 
-    local pkgname="$1"  # e.g. welcome
+    local Pkgname="$1"  # e.g. welcome
     local pkg="$2"      # e.g. welcome-2.3.9.6-1-any.pkg.tar.zst  # assumes: epoch=2
     local -n Newname="$3"
     local cwd=""
@@ -242,15 +246,15 @@ HandlePossibleEpoch() {
     if [ ! -r PKGBUILD ] ; then
         cwd="$PWD"
 
-        if [ ! -r "$PKGBUILD_ROOTDIR/$pkgname/PKGBUILD" ] ; then
-            if IsAurPackage "$pkgname" ; then
+        if [ ! -r "$PKGBUILD_ROOTDIR/$Pkgname/PKGBUILD" ] ; then
+            if IsAurPackage "$Pkgname" ; then
                 cd "$PKGBUILD_ROOTDIR"
-                yay -Ga "$pkgname" >/dev/null || DIE "fetching PKGBUILD of '$pkgname' failed."
+                yay -Ga "$Pkgname" >/dev/null || DIE "fetching PKGBUILD of '$Pkgname' failed."
             else
-                DIE "sorry, getting PKGBUILD of '$pkgname' not supported yet."
+                DIE "sorry, getting PKGBUILD of '$Pkgname' not supported yet."
             fi
         fi
-        cd "$PKGBUILD_ROOTDIR/$pkgname"
+        cd "$PKGBUILD_ROOTDIR/$Pkgname"
     fi
 
     GetPkgbuildValue "PKGBUILD" Epoch "epoch"
@@ -258,7 +262,7 @@ HandlePossibleEpoch() {
     if [ -z "$Epoch" ] ; then
         Newname="$pkg"
     else
-        Newname=$(echo "$pkg" | sed "s|\(${pkgname}-[0-9][0-9]*\)\.\(.*\)|\1:\2|")
+        Newname=$(echo "$pkg" | sed "s|\(${Pkgname}-[0-9][0-9]*\)\.\(.*\)|\1:\2|")
     fi
 
     if [ -n "$cwd" ] ; then
@@ -279,7 +283,7 @@ Build()
     local pkgdirname="$1"
     local assetsdir="$2"
     local pkgbuilddir="$3"
-    local pkgname
+    local Pkgname
     local pkg pkgs
     local workdir=$(mktemp -d)
     local log=$workdir/buildlog-"$pkgdirname".log
@@ -295,7 +299,7 @@ Build()
 
     Pushd "$workdir"
       cp -r "$pkgbuilddir" .
-      pkgname="$(PkgBuildName "$pkgdirname")"
+      Pkgname="$(PkgBuildName "$pkgdirname")"
       Pushd "$workdir/$pkgdirname"
 
       # now build, assume we have PKGBUILD
@@ -303,7 +307,7 @@ Build()
       LANG=C makepkg --clean $opts 2>/dev/null >"$log" || {
           if [ -z "$(grep "$missdeps:" "$log")" ] ; then
               Popd -c2
-              DIE "makepkg for '$pkgname' failed"
+              DIE "makepkg for '$Pkgname' failed"
           fi
           msg="Installing $(echo "$missdeps" | tr [:upper:] [:lower:])"
           if IncludesOption "$opts" "--rmdeps" || IncludesOption "$opts" "-r" ; then
@@ -316,12 +320,12 @@ Build()
           local wrapper=/usr/bin/pacman-for-assets.make
           [ -x "$wrapper" ] || DIE "sorry, $wrapper does not exist!"
 
-          PACMAN=$wrapper makepkg --syncdeps --clean $opts >/dev/null || { Popd -c2 ; DIE "makepkg for '$pkgname' failed" ; }
+          PACMAN=$wrapper makepkg --syncdeps --clean $opts >/dev/null || { Popd -c2 ; DIE "makepkg for '$Pkgname' failed" ; }
       }
       pkgs="$(ls -1 *.pkg.tar.$_COMPRESSOR)"
       [ -n "$pkgs" ] || DIE "$pkgdirname: build failed"
       for pkg in $pkgs ; do
-          # HandlePossibleEpoch "$pkgname" "$pkg" pkg     # not needed here since makepkg should handle epoch OK (?)
+          # HandlePossibleEpoch "$Pkgname" "$pkg" pkg     # not needed here since makepkg should handle epoch OK (?)
           mv $pkg "$assetsdir"
           built+=("$assetsdir/$pkg")
           built_under_this_pkgname+=("$pkg")
@@ -340,16 +344,19 @@ PkgBuildName()
 
 PkgBuildVersion()
 {
-    local pkgdirname="$1"
-    local srcfile="$PKGBUILD_ROOTDIR"/"$(JustPkgname "$pkgdirname")"/PKGBUILD
+    local _pkgdirname="$1"
+    local _srcfile="$PKGBUILD_ROOTDIR"/"$(JustPkgname "$_pkgdirname")"/PKGBUILD
 
-    if [ ! -r "$srcfile" ] ; then
-        DIE "'$srcfile' does not exist."
+    if [ ! -r "$_srcfile" ] ; then
+        DIE "'$_srcfile' does not exist."
     fi
 
     local Epoch="" Pkgver="" Pkgrel=""
 
-    GetPkgbuildValue "$srcfile" Epoch "epoch" Pkgver "pkgver" Pkgrel "pkgrel"
+    # GetPkgbuildValue "$_srcfile" Epoch "epoch" Pkgver "pkgver" Pkgrel "pkgrel"
+    GetPkgbuildValue "$_srcfile" Epoch "epoch"
+    GetPkgbuildValue "$_srcfile" Pkgver "pkgver"
+    GetPkgbuildValue "$_srcfile" Pkgrel "pkgrel"
 
     if [ -n "$Epoch" ] ; then
         echoreturn "$Epoch:${Pkgver}-$Pkgrel"
@@ -439,27 +446,27 @@ ListNameToPkgName()
 
     local xx="$1"
     local fetch="$2"
-    local pkgname
+    local Pkgname
     local hook
 
     hookout=""
 
-    pkgname=$(JustPkgname "$xx")
+    Pkgname=$(JustPkgname "$xx")
 
     [ "${xx::4}" = "aur/" ] && AurMarkingFail "$xx"
 
     if [ "${xx: -4}" = "/aur" ] ; then
         case "$fetch" in
             yes)
-                rm -rf "$pkgname"
-                yay -Ga "$pkgname" >/dev/null || DIE "'yay -Ga $pkgname' failed."
-                Compare "$pkgname" "$pkgname/PKGBUILD" || return 1
+                rm -rf "$Pkgname"
+                yay -Ga "$Pkgname" >/dev/null || DIE "'yay -Ga $Pkgname' failed."
+                # Compare "$Pkgname" "$Pkgname/PKGBUILD" || return 1
                 ;;
         esac
     fi
 
     # A pkg may need some changes:
-    hook="${ASSET_PACKAGE_HOOKS[$pkgname]}"
+    hook="${ASSET_PACKAGE_HOOKS[$Pkgname]}"
     if [ -n "$hook" ] ; then
         if [ "$fetch" = "yes" ] ; then
             hookout=$($hook)
@@ -474,7 +481,7 @@ ListNameToPkgName()
         HookIndicator "$hook_no"
     fi
 
-    pkgdirname="$pkgname"
+    pkgdirname="$Pkgname"
 }
 
 Compare() {
@@ -590,7 +597,7 @@ AskFetchingFromGithub() {
     # Check if there differences between local and remote file names.
     # If not, use local assets.
 
-    DebugBreak
+    DebugBreak "remote assets with checking"
 
     local local_files=""
     local remote_files=""
@@ -722,7 +729,7 @@ Assets_clone()
         break
     done
 
-    DebugBreak
+    DebugBreak "remote asset checking"
 
     if [ -r $remote ] ; then
         read2 -p "Asset names at github are the same as here, fetch anyway (y/N)? " -t $waittime
@@ -764,15 +771,15 @@ Assets_clone()
             # Unfortunately github release assets cannot contain a colon (epoch mark) in file name, so rename those packages locally
             # after fetching them above.
 
-            local oldname newname pkgname
+            local oldname newname Pkgname
 
             for oldname in *.pkg.tar.{zst,xz} ; do
                 case "$oldname" in
                     "*.pkg."*) continue ;;
                 esac
-                pkgname=$(pkg-name-components N "$oldname")
-                IsListedPackage "$pkgname" || continue
-                HandlePossibleEpoch "$pkgname" "$oldname" newname
+                Pkgname=$(pkg-name-components N "$oldname")
+                IsListedPackage "$Pkgname" || continue
+                HandlePossibleEpoch "$Pkgname" "$oldname" newname
                 if [ "$newname" != "$oldname" ] ; then
                     echo2 "==> Fix: $oldname     --> $newname"
                     echo2 "==> Fix: $oldname.sig --> $newname.sig"
@@ -788,9 +795,9 @@ Assets_clone()
 }
 
 PkgbuildExists() {
-    local pkgname="$1"                         # a name from "${PKGNAMES[@]}"
+    local Pkgname="$1"                         # a name from "${PKGNAMES[@]}"
     local special="$2"
-    local yy=$(JustPkgname "$pkgname")
+    local yy=$(JustPkgname "$Pkgname")
 
     if [ -r "$PKGBUILD_ROOTDIR/$yy/PKGBUILD" ] ; then
         return 0
@@ -887,13 +894,13 @@ Destructor()
 ShowOldCompressedPackages() {
     # If we have *both* .zst and .xz package, show the .xz package.
 
-    local pkg pkgdir pkgname
+    local pkg pkgdir Pkgname
     local pkg2 pkg22
 
     for pkg in $(ls "$ASSETSDIR"/*.pkg.tar.zst 2>/dev/null) ; do
-        pkgname="$(basename "$pkg")"
+        Pkgname="$(basename "$pkg")"
         pkgdir="$(dirname "$pkg")"
-        pkg2="$pkgdir/$(echo "$pkgname" | sed 's|\-[0-9].*$||')"
+        pkg2="$pkgdir/$(echo "$Pkgname" | sed 's|\-[0-9].*$||')"
         pkg22="$(ls "$pkg2"-*.pkg.tar.xz 2>/dev/null)"
         if [ -n "$pkg22" ] ; then
             for pkg2 in $pkg22 ; do
@@ -1197,10 +1204,10 @@ PkgnameFromPkg() {
 }
 
 ListPkgsWithName() {
-    local pkgname="$1"
+    local Pkgname="$1"
     local compr="$2"
 
-    ls -1 "$pkgname"-*.pkg.tar.$compr 2> /dev/null | grep -E "${pkgname}-[^-]+-[^-]+-[^\.]+\.pkg\.tar\.$compr$"
+    ls -1 "$Pkgname"-*.pkg.tar.$compr 2> /dev/null | grep -E "${Pkgname}-[^-]+-[^-]+-[^\.]+\.pkg\.tar\.$compr$"
 }
 
 Usage() {
@@ -1353,9 +1360,9 @@ Main2()
     local REPOSIG=0                         # 1 = sign repo too, 0 = don't sign repo
     local SKIP_UNACCEPTABLE_PKGBUILD=()
 
-    source /etc/eos-pkgbuild-setup.conf     # sets the base folder of everything
-    [ -n "$EOS_ROOT" ] || DIE "EOS_ROOT is not set in /etc/eos-pkgbuild-setup.conf!"
-    [ -n "$_PACKAGER" ] || DIE "_PACKAGER is not set in /etc/eos-pkgbuild-setup.conf!"
+    source /etc/$PROGNAME.conf     # sets the base folder of everything
+    [ -n "$EOS_ROOT" ] || DIE "EOS_ROOT is not set in /etc/$PROGNAME.conf!"
+    [ -n "$_PACKAGER" ] || DIE "_PACKAGER is not set in /etc/$PROGNAME.conf!"
 
     source $ASSETS_CONF                     # local variables (with CAPITAL letters)
 
@@ -1372,7 +1379,7 @@ Main2()
 
     LogStuff
 
-    DebugBreak
+    DebugBreak "before RationalityTests"
     
     RationalityTests            # check validity of values in $ASSETS_CONF
 
@@ -1397,7 +1404,7 @@ Main2()
     local tmp tmpcurr
     local pkg
     local pkgdirname            # dir name for a package
-    local pkgname
+    local Pkgname
     local buildsavedir          # tmp storage for built packages
     local notexist='<non-existing>'
     local cmpresult
@@ -1411,6 +1418,8 @@ Main2()
     local -r CHANGED="${YELLOW}CHANGED${RESET}"
 
     listing_updates=yes
+
+    DebugBreak "before check loop"
 
     if [ "$repoup" = "0" ] ; then
 
@@ -1430,8 +1439,8 @@ Main2()
             newv[$pkgdirname]="$tmp"
 
             # get current versions from local asset files
-            pkgname="$(PkgBuildName "$pkgdirname")"
-            tmpcurr="$(LocalVersion "$ASSETSDIR/$pkgname")"
+            Pkgname="$(PkgBuildName "$pkgdirname")"
+            tmpcurr="$(LocalVersion "$ASSETSDIR/$Pkgname")"
             case "$tmpcurr" in
                 "") DIE "LocalVersion for '$xx' failed" ;;
                 "-")
@@ -1461,7 +1470,7 @@ Main2()
                 continue
             fi
 
-            DebugBreak
+            DebugBreak "decided to build"
 
             ((total_items_to_build++))
             ShowResult "$CHANGED ($tmpcurr ==> $tmp)" "$hookout"
@@ -1469,7 +1478,7 @@ Main2()
             [ $cmpresult -gt 0 ] && WantPkgDiffs "$xx" "$pkgdirname"
         done
 
-        DebugBreak
+        DebugBreak "before building"
 
         [ "${#PKG_DIFFS[@]}" -gt 0 ] && ShowPkgDiffs
 
@@ -1551,9 +1560,9 @@ Main2()
             # determine old pkgs, may be many
             for zz in zst xz ; do
                 for yy in "${built_under_this_pkgname[@]}" ; do
-                    pkgname="$(PkgnameFromPkg "$yy")"
-                    # pkg="$(ls -1 "$ASSETSDIR/$pkgname"-[0-9]*.pkg.tar.$zz 2> /dev/null)"
-                    pkg=$(ListPkgsWithName "$pkgname" "$zz")
+                    Pkgname="$(PkgnameFromPkg "$yy")"
+                    # pkg="$(ls -1 "$ASSETSDIR/$Pkgname"-[0-9]*.pkg.tar.$zz 2> /dev/null)"
+                    pkg=$(ListPkgsWithName "$Pkgname" "$zz")
                     if [ -n "$pkg" ] ; then
                         local xyz
                         for xyz in $pkg ; do
@@ -1615,8 +1624,8 @@ Main2()
                     case "$xx" in
                         *.pkg.tar.$_COMPRESSOR)
                             #pkgname="$(basename "$xx" | sed 's|\-[0-9].*$||')"
-                            pkgname="$(PkgnameFromPkg "$xx")"
-                            repo_removes+=("$pkgname")
+                            Pkgname="$(PkgnameFromPkg "$xx")"
+                            repo_removes+=("$Pkgname")
                             ;;
                     esac
                 done
@@ -1962,7 +1971,10 @@ AssetsConfLocalVal() {
 }
 
 Main() {
-    local -r PROGNAME="${BASH_ARGV0##*/}"
+    local PROGNAME="${0##*/}"
+    [ "$PROGNAME" ] || PROGNAME="${BASH_ARGV0##*/}"
+    [ "$PROGNAME" ] || PROGNAME="assets.make"
+
     local -r ASSETS_CONF=assets.conf   # This file must exist in the current folder when building packages.
     local -r ARCH=x86_64
     local -r _first_arg="$1"
@@ -2004,10 +2016,10 @@ Main() {
         echo2 "PACKAGER: $PACKAGER"
     fi
 
-    local verfile=/etc/eos-pkgbuild-setup.version
-    [ -r $verfile ] && echo2 "VERSION: $(< $verfile)"
+    local -r PACKAGE_NAME=eos-pkgbuild-setup
+    [ -x /bin/expac ] && echo2 "VERSION: $(expac %v $PACKAGE_NAME)"
 
-    DebugBreak
+    DebugBreak "before Main2"
 
     Main2 "$@"
 }
