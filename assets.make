@@ -374,10 +374,11 @@ LocalVersion()
     Pkgname="$(JustPkgname "$Pkgname")"
 
     for xx in zst xz ; do         # order is important because of change to zstd!
-        pkgs="$(ls -1v "$ASSETSDIR"/${Pkgname}-[0-9]*.pkg.tar.$xx 2>/dev/null)"    # $_COMPRESSOR
+        pkgs=$(ListPkgsWithName "$ASSETSDIR/$Pkgname" "$xx")
         test -n "$pkgs" && break
     done
 
+    [ "$pkgs" ] || { echoreturn "0"; return; }
     case "$(echo "$pkgs" | wc -l)" in
         0) echoreturn "0" ; return ;;
         1) ;;
