@@ -1207,8 +1207,17 @@ PkgnameFromPkg() {
 ListPkgsWithName() {
     local Pkgname="$1"
     local compr="$2"
+    local name
+    local tmp=""
 
-    ls -1 "$Pkgname"-*.pkg.tar.$compr 2> /dev/null | grep -E "${Pkgname}-[^-]+-[^-]+-[^\.]+\.pkg\.tar\.$compr$"
+    tmp=$(/bin/ls -1v "$Pkgname"-*.pkg.tar.$compr 2> /dev/null | grep -E "${Pkgname}-[^-]+-[^-]+-[^\.]+\.pkg\.tar\.$compr$")
+    [ "$tmp" ] || return
+
+    for name in $tmp ; do
+        if [ "$(echo "$name" | pkg-name-components N)" = "$Pkgname" ] ; then
+            echo "$name"
+        fi
+    done
 }
 
 Usage() {
