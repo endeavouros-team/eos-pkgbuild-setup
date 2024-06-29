@@ -191,8 +191,8 @@ Main()
     local only_fails=no
     local arg
     local arch=""
-    local -r conf=/etc/eos-mirrorcheck.conf
-    local -r DEFAULT_MIRROR_NAME=Alpix
+    local -r DEFAULT_MIRROR_NAME=alpix.eu
+    local -r list=/etc/pacman.d/endeavouros-mirrorlist
     local supported_params=(
         "<folder-name>"
         --slow
@@ -204,6 +204,18 @@ Main()
         --show-params
     )
 
+    local MIRROR_NAMES=(
+        # Get names from the endeavouros-mirrorlist with ad hoc algorithm.
+        # Assume endeavouros-mirrorlist includes the up-to-date mirrors in comments (lines of "#Server = https://...").
+        # This implementation picks only lines starting with "#Server = ".
+
+        $(grep "^#Server = " $list |
+              awk '{print $NF}' |
+              sed -E -e 's|^https://([^/]+)/.*|\1|' -e 's|^.*mirror\.||' -e 's|^.*mirrors\.||' -e 's|^www\.||' -e 's|^ftp\.||'
+        )
+    )
+    [ ${#MIRROR_NAMES[0]} -gt 0 ] || DIE "MIRROR_NAMES[0] is empty! Check file $conf."
+
     for arg in "$@" ; do
         case "$arg" in
             --reponame=*) reponame="${arg#*=}" ;;
@@ -212,18 +224,21 @@ Main()
             --optimized) mode=optimized ;;
             --only-fails | -f) only_fails=yes ;;
             --no-filelist) has_filelist=no ;;   # no repofiles.txt
-            --show-params) echo "${supported_params[*]}" ; return ;;
+            --show-params) echo "${supported_params[*]}" ; exit ;;
+            --show-mirror-nicks) echo "${MIRROR_NAMES[*]}" ; exit  ;; # for bash completion
             -*) DIE "unsupported parameter '$arg'" ;;
             *) folder="$arg" ;;
         esac
     done
 
-    [ -n "$folder" ] && cd "$folder"
+    [ "$(printf "%s\n" "${MIRROR_NAMES[@]}" | grep "$DEFAULT_MIRROR_NAME" )" ] || DIE "$DEFAULT_MIRROR_NAME was not found in $list"
+
+    [ -n "$folder" ] && cd "$folder"  # NOTE: special cd !!
 
     if [ -r assets.conf ] && [ -d PKG_ARCHIVE ] ; then
         arch=x86_64                # we are in the original build folder
     else
-        arch=$(basename "$PWD")    # x86_64 or aarch64
+        arch=${PWD##*/}    # x86_64 or aarch64
         case "$arch" in
             x86_64 | aarch64) ;;
             *) DIE "must run this program at an architecture specific folder (e.g. repo/endeavouros/x86_64)." ;;
@@ -234,11 +249,24 @@ Main()
         esac
     fi
 
-    test -r $conf || DIE "configuration file $conf is required but not found."
+    # Internet URL to the mirror's folder where EndeavourOS repo packages are.
+    # Note: some mirrors require a trailing slash '/' character.
+    #
+    declare -A MIRROR_URLS
 
-    source $conf
+    local name xx
 
-    test -n "${MIRROR_NAMES[0]}" || DIE "MIRROR_NAMES[0] is empty! Check file $conf."
+    for name in "${MIRROR_NAMES[@]}" ; do
+        xx="$(grep "^Server = " $list | grep -iw "$name" | head -n1 | awk '{print $3}')/"  # note: / at end !!
+        if [ "$xx" = "/" ] ; then
+            xx="$(grep "^#Server = " $list | grep -iw "$name" | head -n1 | awk '{print $3}')/"  # note: / at end !!
+        fi
+        if [ "$xx" != "/" ] ; then
+            MIRROR_URLS[$name]="$xx"
+        else
+            echo "==> /etc/eos-mirrorcheck.conf: error: mirror name '$name' refers to no URL $list!" >&2
+        fi
+    done
 
     case "$reponame" in
         "")
@@ -252,7 +280,6 @@ Main()
             done
             ;;
         *)
-            local list=/etc/pacman.d/endeavouros-mirrorlist
             if [ -n "$(grep "^Server = " $list | grep -iw "$reponame")" ] ; then
                 OneMirror
             else

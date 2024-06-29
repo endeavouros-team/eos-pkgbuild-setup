@@ -5,11 +5,6 @@ _my_complete() {
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 
-_mirrorcheck_mirrornames() {
-    source /etc/eos-mirrorcheck.conf
-    echo "${MIRROR_NAMES[*]}"
-}
-
 _mirrorcheck_() 
 {
     local cur prev #words cword split
@@ -20,7 +15,7 @@ _mirrorcheck_()
 
     case "$prev" in
         --reponame)
-            _my_complete "$(_mirrorcheck_mirrornames)"
+            _my_complete "$(mirrorcheck --show-mirror-nicks)"
             return
             ;;
     esac
