@@ -44,6 +44,12 @@ local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 # - The EndeavourOS names are actually folder names for packages under PKGBUILDS, not actual package names!
 #
 
+## Removed from PKG_CHANGELOGS:
+# endeavouros-skel-default          "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
+# endeavouros-skel-i3wm             "https://github.com/endeavouros-team/endeavouros-i3wm-setup/commits"
+# endeavouros-skel-xfce4            "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
+# nvidia-installer-common           "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-installer-common"
+
 declare -A PKG_CHANGELOGS=(
     akm                               "https://github.com/endeavouros-team/PKGBUILDS/commits/master/akm"
     arc-gtk-theme-eos                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/arc-gtk-theme-eos"
@@ -83,6 +89,7 @@ declare -A PKG_CHANGELOGS=(
     eos-update-notifier               "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-update-notifier"
     filesystem                        "https://gitlab.archlinux.org/archlinux/packaging/packages/filesystem/-/commits"
     kernel-install-for-dracut         "https://gitlab.com/dalto.8/kernel-install-for-dracut/commits"
+    keyserver-rank                    "https://github.com/endeavouros-team/PKGBUILDS/commits/master/keyserver-rank"
     lsb-release                       "https://gitlab.archlinux.org/archlinux/packaging/packages/lsb-release/-/commits"
     mkinitcpio-openswap               "https://aur.archlinux.org/cgit/aur.git/log/?h=mkinitcpio-openswap"
     nvidia-hook                       "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-hook"
@@ -97,26 +104,15 @@ declare -A PKG_CHANGELOGS=(
     yay                               "https://github.com/Jguer/yay/releases"
     zfs-dkms                          "https://github.com/openzfs/zfs/releases"
     zfs-utils                         "https://github.com/openzfs/zfs/releases"
-
-    ## Removed:
-    # endeavouros-skel-default          "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
-    # endeavouros-skel-i3wm             "https://github.com/endeavouros-team/endeavouros-i3wm-setup/commits"
-    # endeavouros-skel-xfce4            "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
-    # nvidia-installer-common           "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-installer-common"
 )
 
 PKGNAMES=(                                        # Alphabetically ordered.
     akm
     arc-gtk-theme-eos
-
     bashdb/aur
-
     calamares
-
     ckbcomp
-
     downgrade/aur
-
     endeavouros-keyring
     endeavouros-mirrorlist
     endeavouros-theming
@@ -147,58 +143,26 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-settings-xfce4
     eos-translations
     eos-update-notifier
-
     # filesystem
-
     kernel-install-for-dracut
     keyserver-rank               # probably not needed?
-
     # lsb-release
-
     nvidia-hook
     nvidia-inst
-
     pahis
     paru/aur
-
     qemu-arm-aarch64-static-bin
-
     rate-mirrors/aur
     reflector-bash-completion
     reflector-simple
-
     welcome
-
     yad
     yay/aur
-
     zfs-dkms/aur
     zfs-utils/aur
-
-
-    ## Removed:
-    #arc-x-icons-theme/aur
-    # dracut
-    # endeavouros-skel-default
-    # endeavouros-skel-i3wm
-    # endeavouros-skel-xfce4
-    # eos-skel-ce-awesome
-    # eos-skel-ce-bspwm
-    # eos-skel-ce-openbox
-    # eos-skel-ce-qtile
-    # eos-skel-ce-sway
-    # eos-skel-ce-worm
-    # nvidia-installer-common
-    # paper-icon-theme
-    # wgetpaste-eos
-    # worm/aur
 )
 
-if false ; then
-    PKGNAMES=(
-        eos-lightdm-gtk-theme
-    )
-fi
+# PKGNAMES=( eos-lightdm-gtk-theme )
 
 # Use option --pkgnames="names" for special checks!
 
@@ -212,7 +176,7 @@ PKGNAMES_WAIT=(
     filesystem
     lsb-release
 )
-
+# PKGNAMES_WAIT+=( endeavouros-theming )    # wait for the release
 
 
 
@@ -223,8 +187,6 @@ PKGNAMES_WAIT=(
 
 
 declare -A PKG_MAKEPKG_OPTIONS=(
-    endeavouros-skel-i3wm      "--nodeps"
-    endeavouros-skel-xfce4     "--nodeps"
     eos-dracut                 "--nodeps"
     eos-lightdm-slick-theme    "--nodeps"
     eos-plasma-sddm-config     "--nodeps"
@@ -232,10 +194,12 @@ declare -A PKG_MAKEPKG_OPTIONS=(
     eos-settings-plasma        "--nodeps"
     kernel-install-for-dracut  "--nodeps"
     eos-quickstart             "--rmdeps"
-    worm                       "--rmdeps"
     yay                        "--rmdeps"
 
-    # calamares                "--nodeps"
+    # calamares                  "--nodeps"
+    # endeavouros-skel-i3wm      "--nodeps"
+    # endeavouros-skel-xfce4     "--nodeps"
+    # worm                       "--rmdeps"
 )
 
 # Hook functions are run in the beginning after RationalityTests in assets.make.
