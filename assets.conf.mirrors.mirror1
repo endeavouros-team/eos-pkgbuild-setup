@@ -168,13 +168,19 @@ PKGNAMES=(                                        # Alphabetically ordered.
 
 
 # PKGNAMES_WAIT specifies which of the packages in PKGNAMES will not be built.
-# Include them in quotes because we use the pipe character '|' to separate package name and the version.
-# Also add the version to skip, like 'pkgname|version-to-skip', e.g. 'eos-lxdm-gtk3|0.5.3-5'.
-# If all versions of a package should be in wait mode, write only the package name, e.g. 'eos-lxdm-gtk3'.
+# Formats supported:
+#   'package-name'                  skips all versions of 'package-name'
+#   'package-name|pkgver-pkgrel'    skips a specific version of 'package-name'
+# Examples:
+#   'eos-lxdm-gtk3'
+#   'eos-lxdm-gtk3|0.5.3-5'
+# Note: include the definition in quotes because of the pipe character '|'.
 #
 PKGNAMES_WAIT=(
-    filesystem
-    lsb-release
+    'ckbcomp|1.229-1'     # this version has no changes in app /bin/ckbcomp
+
+    # filesystem
+    # lsb-release
 )
 # PKGNAMES_WAIT+=( endeavouros-theming )    # wait for the release
 
