@@ -177,7 +177,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
 # Note: include the definition in quotes because of the pipe character '|'.
 #
 PKGNAMES_WAIT=(
-    'ckbcomp|1.229-1'     # this version has no changes in app /bin/ckbcomp
+    'ckbcomp|1.230-1'     # this version has no changes in app /bin/ckbcomp
 
     # filesystem
     # lsb-release
