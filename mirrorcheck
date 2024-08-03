@@ -3,6 +3,7 @@
 # Check that a mirror repo has the same package and db files as the given local folder.
 #
 
+printf2() { printf "$@" >&2 ; }
 echo2()   { echo  "$@" >&2 ; }
 echo2i()  { echoi "$@" >&2 ; }
 echoi() {
@@ -46,7 +47,11 @@ NameCheck() {
         else
             case "$mode" in
                 fastall) ;;
-                *) [ $only_fails = no ] && echo2 "    OK: $xx" ;;
+                *) case $only_fails in
+                       no) echo2 "    OK: $xx" ;;
+                       yes) printf2 "\r%s" "$((++handled))/$count" ;;
+                   esac
+                   ;;
             esac
         fi
     done
@@ -70,7 +75,7 @@ ContentsCheck() {
                 ;;
         esac
 
-        if ! curl -Lfsm 10 -o "$tmpdir/$xx" "$url/$xx" ; then
+        if ! curl -Lfsm 30 -o "$tmpdir/$xx" "$url/$xx" ; then
             echo2i "FAIL: $xx fetching failed."
             problemfiles+="$xx "
             continue
@@ -81,7 +86,10 @@ ContentsCheck() {
             continue
         fi
         rm -f "$tmpdir/$xx"
-        [ $only_fails = no ] && echo2 "    OK: $xx"
+        case $only_fails in
+            no)  echo2 "    OK: $xx" ;;
+            yes) printf2 "\r%s" "$((++handled))/$count" ;;
+        esac
     done
 }
 
@@ -114,13 +122,21 @@ OneMirror() {
     packages="$(ls -1 *.pkg.tar.*)"
     repofiles="$(echo endeavouros.{db,files}{,.tar.xz})"
 
+    local handled=0
+    local count=0
+    local -r count_pkgs=$(echo "$packages" | wc -l)
+    local -r count_repofiles=$(printf "%s\n" $repofiles | wc -l)
+    local -r count_state=1
+    local  count_filelist=0
+
+    [ "$has_filelist" = "yes" ] && count_filelist=1
+    count=$((count_pkgs + count_repofiles + count_filelist + count_state))
+
     # Check files. 'NameCheck' is very fast but unreliable. 'ContentsCheck' is quite slow but reliable.
     local tmpdir=$(mktemp -d)
     ContentsCheck $repofiles                 # This should make sure all is OK ! (?)
     ContentsCheck state
-    if [ "$has_filelist" = "yes" ] ; then
-        ContentsCheck repofiles.txt
-    fi
+    [ "$has_filelist" = "yes" ] && ContentsCheck repofiles.txt
 
     case "$mode" in
         fast | fastall)
@@ -143,6 +159,7 @@ OneMirror() {
             ;;
     esac
     rm -rf $tmpdir
+    [ $only_fails = yes ] && echo2 ""
 
     if [ -z "$problemfiles" ] ; then
         echo2i "==> No issues."
@@ -169,6 +186,7 @@ parameters:
     --fast             Check just the name of all package files (default).
     --optimized        Check contents of some files, and names of other files.
     --only-fails, -f   Show only failed file checks.
+    --verbose, -v      Show checks in detail. See also: --only-fails.
     --reponame=X       Use given name as the mirror name (default: all known mirrors).
     --no-filelist      Don't generate list of latest files into the repo.
     --show-params      Show all available parameters as a list (for completion support).
@@ -188,7 +206,7 @@ Main()
     local mode=fast   # show, optimized, fast
     local folder=""
     local reponame=""
-    local only_fails=no
+    local only_fails=yes
     local arg
     local arch=""
     local -r DEFAULT_MIRROR_NAME=alpix.eu
@@ -199,6 +217,7 @@ Main()
         --fast
         --optimized
         --only-fails -f
+        --verbose -v
         --reponame=
         --no-filelist
         --show-params
@@ -223,6 +242,7 @@ Main()
             --fast) mode=fast ;;
             --optimized) mode=optimized ;;
             --only-fails | -f) only_fails=yes ;;
+            --verbose | -v)    only_fails=no ;;
             --no-filelist) has_filelist=no ;;   # no repofiles.txt
             --show-params) echo "${supported_params[*]}" ; exit ;;
             --show-mirror-nicks) echo "${MIRROR_NAMES[*]}" ; exit  ;; # for bash completion
