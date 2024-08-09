@@ -430,6 +430,16 @@ ExplainHookMarks() {
     printf2 "\n"
 }
 
+FetchAurPkgs() {
+    local pkgs=$(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
+    pkgs=$(echo $pkgs)
+    if [ "$pkgs" ] ; then
+        echo2 "==> Fetching AUR PKGBUILD recipe files: $pkgs"
+        rm -rf $pkgs
+        yay -Ga $pkgs >/dev/null || DIE "yay -Ga $pkgs failed."
+    fi
+}
+
 ListNameToPkgName()
 {
     # "returns" pkgdirname and hookout
@@ -446,7 +456,7 @@ ListNameToPkgName()
     #    pkgname/aur      AUR package  (another way)
 
     local xx="$1"
-    local fetch="$2"
+    local run_hook="$2"
     local Pkgname
     local hook
 
@@ -456,20 +466,20 @@ ListNameToPkgName()
 
     [ "${xx::4}" = "aur/" ] && AurMarkingFail "$xx"
 
-    if [ "${xx: -4}" = "/aur" ] ; then
-        case "$fetch" in
-            yes)
-                rm -rf "$Pkgname"
-                yay -Ga "$Pkgname" >/dev/null || DIE "'yay -Ga $Pkgname' failed."
-                # Compare "$Pkgname" "$Pkgname/PKGBUILD" || return 1
-                ;;
-        esac
-    fi
+    # if [ "${xx: -4}" = "/aur" ] ; then
+    #     case "$run_hook" in
+    #         yes)
+    #             rm -rf "$Pkgname"
+    #             yay -Ga "$Pkgname" >/dev/null || DIE "'yay -Ga $Pkgname' failed."
+    #             # Compare "$Pkgname" "$Pkgname/PKGBUILD" || return 1
+    #             ;;
+    #     esac
+    # fi
 
     # A pkg may need some changes:
     hook="${ASSET_PACKAGE_HOOKS[$Pkgname]}"
     if [ -n "$hook" ] ; then
-        if [ "$fetch" = "yes" ] ; then
+        if [ "$run_hook" = "yes" ] ; then
             hookout=$($hook)
             case $? in
                 0) HookIndicator "$hook_yes" ;;          # OK
@@ -1436,10 +1446,13 @@ Main2()
         echo2 "Finding package info ..."
 
         Pushd "$PKGBUILD_ROOTDIR"
+
+        FetchAurPkgs
+
         for xx in "${PKGNAMES[@]}" ; do
-            ShowIndented "$(JustPkgname "$xx")" 1
+            ShowIndented "$xx" 1                                                # show also the "/aur" suffix if available
             hookout=""
-            ListNameToPkgName "$xx" yes || continue                                         # sets pkgdirname and hookout
+            ListNameToPkgName "$xx" yes || continue                             # sets pkgdirname and hookout
             [ -n "$pkgdirname" ] || DIE "converting or fetching '$xx' failed"
             PkgbuildExists "$pkgdirname" "line $LINENO" || continue
 
