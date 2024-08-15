@@ -434,7 +434,7 @@ FetchAurPkgs() {
     local pkgs=$(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
     pkgs=$(echo $pkgs)
     if [ "$pkgs" ] ; then
-        echo2 "==> Fetching AUR PKGBUILD recipe files: $pkgs"
+        echo2 "==> From AUR: $pkgs"
         rm -rf $pkgs
         yay -Ga $pkgs >/dev/null || DIE "yay -Ga $pkgs failed."
     fi
