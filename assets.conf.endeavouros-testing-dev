@@ -31,7 +31,7 @@ local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 
 ## package name specifications
 local PKGNAMES=(                                    # actually: dir names for packages
-    b43-firmware/aur
+#    b43-firmware/aur
     python3-gpg_batch_sign/aur
     repo-add_and_sign/aur
 #    aur/archupdate-indicator

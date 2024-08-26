@@ -202,7 +202,10 @@ GetPkgbuildValue1() {
                     source "$PKGBUILD"
                     retvar="$(pkgver)"
                 else
-                    retvar=$(grep ^pkgver= "$PKGBUILD" | awk '{print $1}' | sed 's|^pkgver=||')
+                    retvar=$(grep ^pkgver= "$PKGBUILD")   # pkgver=something
+                    retvar=${retvar#*=}                   # remove pkgver=
+                    retvar=${retvar%% *}                  # remove all after space
+                    retvar=${retvar//[\'\"]/}             # remove all quote marks
                 fi
                 unset -f pkgver
 
@@ -322,8 +325,10 @@ Build()
 
           PACMAN=$wrapper makepkg --syncdeps --clean $opts >/dev/null || { Popd -c2 ; DIE "makepkg for '$Pkgname' failed" ; }
       }
-      pkgs="$(ls -1 *.pkg.tar.$_COMPRESSOR)"
-      [ -n "$pkgs" ] || DIE "$pkgdirname: build failed"
+      pkgs=(*.pkg.tar.$_COMPRESSOR)
+      case "$pkgs" in
+          "" | "*.pkg.tar.$_COMPRESSOR") DIE "$pkgdirname: build failed" ;;
+      esac
       for pkg in $pkgs ; do
           # HandlePossibleEpoch "$Pkgname" "$pkg" pkg     # not needed here since makepkg should handle epoch OK (?)
           mv $pkg "$assetsdir"
@@ -407,9 +412,9 @@ JustPkgname()
         ./*)      fakepath="${fakepath:2}" ;;
         */aur)    fakepath="${fakepath:: -4}" ;;
         aur/*)    AurMarkingFail "$fakepath" ;;
-        *)        fakepath="${fakepath}"   ;;
+        # *)      fakepath="${fakepath}"   ;;
     esac
-    echoreturn "$(basename "$fakepath")"
+    echoreturn ${fakepath##*/}
 }
 
 HookIndicator() {
@@ -431,12 +436,12 @@ ExplainHookMarks() {
 }
 
 FetchAurPkgs() {
-    local pkgs=$(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
-    pkgs=$(echo $pkgs)
-    if [ "$pkgs" ] ; then
-        echo2 "==> From AUR: $pkgs"
-        rm -rf $pkgs
-        yay -Ga $pkgs >/dev/null || DIE "yay -Ga $pkgs failed."
+    local pkgs
+    readarray -t pkgs <<< $(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
+    if [ "${pkgs[0]}" ] ; then
+        echo2 "==> From AUR: ${pkgs[*]}"
+        rm -rf "${pkgs[@]}"
+        yay -Ga "${pkgs[@]}" >/dev/null || DIE "yay -Ga ${pkgs[*]} failed."
     fi
 }
 
@@ -909,8 +914,8 @@ ShowOldCompressedPackages() {
     local pkg2 pkg22
 
     for pkg in $(ls "$ASSETSDIR"/*.pkg.tar.zst 2>/dev/null) ; do
-        Pkgname="$(basename "$pkg")"
-        pkgdir="$(dirname "$pkg")"
+        Pkgname=${pkg##*/}
+        pkgdir=${pkg%/*}
         pkg2="$pkgdir/$(echo "$Pkgname" | sed 's|\-[0-9].*$||')"
         pkg22="$(ls "$pkg2"-*.pkg.tar.xz 2>/dev/null)"
         if [ -n "$pkg22" ] ; then
@@ -1209,7 +1214,7 @@ PkgnameFilter() {
 
 PkgnameFromPkg() {
     local pkg="$1"
-    pkg="$(basename "$pkg")"
+    pkg=${pkg##*/}
     # echo "$pkg" | PkgnameFilter
     echo "$pkg" | pkg-name-components N
 }
@@ -1592,7 +1597,7 @@ Main2()
                             removable+=("$xyz")
                             removable+=("$xyz".sig)
 
-                            yy="$(basename "$xyz")"
+                            yy=${xyz##*/}
                             removableassets+=("$yy")
                             #removableassets+=("$yy".sig)
                         done
@@ -1633,14 +1638,12 @@ Main2()
                 tmp=("${built[@]}")
                 built=()
                 for xx in "${tmp[@]}" ; do
-                    built+=("$(basename "$xx")")
-                    #built+=("$ASSETSDIR/$(basename "$xx")")
+                    built+="${xx##*/}"
                 done
                 tmp=("${signed[@]}")
                 signed=()
                 for xx in "${tmp[@]}" ; do
-                    signed+=("$(basename "$xx")")
-                    #signed+=("$ASSETSDIR/$(basename "$xx")")
+                    signed+="${xx##*/}"
                 done
 
                 for xx in "${built[@]}" ; do
