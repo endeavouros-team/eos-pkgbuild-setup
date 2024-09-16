@@ -320,11 +320,20 @@ _paru_hook() {
     GetPkgbuildValue "$PKGBUILD" Pkgver "pkgver"
     GetPkgbuildValue "$PKGBUILD" Pkgrel "pkgrel"
 
-    if [ "${Pkgver}-$Pkgrel" = "1.11.1-1" ] ; then
-        sed -i "$PKGBUILD" \
-            -e 's|^pkgver=.*|pkgver=1.11.2|' \
-            -e "s|^sha256sums=.*|sha256sums=('9fd8db52894f9e7d61a3901d2c441502aab28a090083e0d6fdb58118e53a8a14')|"
-    fi
+    case "${Pkgver}-$Pkgrel" in
+         1.11.1-1)
+             sed -i "$PKGBUILD" \
+                 -e 's|^pkgver=.*|pkgver=1.11.2|' \
+                 -e "s|^sha256sums=.*|sha256sums=('9fd8db52894f9e7d61a3901d2c441502aab28a090083e0d6fdb58118e53a8a14')|"
+             ;;
+         2.0.3-1)
+             sed -i "$PKGBUILD" \
+                 -e 's|^pkgrel=.*|pkgrel=1.1|' \
+                 -e 's|^source=.*|source=("$pkgname-$pkgver::git+https://github.com/Morganamilo/paru.git#commit=90656a9")|' \
+                 -e "s|^depends=.*|depends=(git pacman 'libalpm.so=15')|" \
+                 -e "s|^sha256sums=.*|sha256sums=('b1385075347c3ec2c4dda8055fd74cb9106ea5e2ee92d76a56a9c7707932221f')|"
+             ;;
+    esac
 }
 
 _eos-lightdm-gtk-theme_hook() {
@@ -807,19 +816,19 @@ declare -A ASSET_PACKAGE_HOOKS=(
     assets_mirrors         _assets_download_break                          # special hook
 
     eos-bash-shared        _eos-bash-shared_hook_check_ksetwallpaper_py    # Check if we have the latest version of file ksetwallpaper.py.
-    dracut                 _dracut_hook                                    # Inform if the Arch version if not older than the EndeavourOS version
+    paru                   _paru_hook
 
     # bashdb                 _bashdb_hook                                  # no more needed
     # budgie-control-center  _budgie-control-center_hook
     # ckbcomp                _ckbcomp_hook
     # ckbcomp                _ckbcomp_hook_change_version
     # downgrade              _downgrade_hook_check_latest
+    # dracut                 _dracut_hook                                    # Inform if the Arch version if not older than the EndeavourOS version
     # eos-lightdm-gtk-theme  _eos-lightdm-gtk-theme_hook                   # Clone package source of eos-lightdm-gtk-theme from EndeavourOS ARM
     # inxi                   _inxi_hook_check_latest
     # kalu                   _kalu_hook_fix_files
     # nvidia-installer-db    _nvidia-installer-db_hook
     # paper-icon-theme-git   _paper-icon-theme-git_hook
-    # paru                   _paru_hook
     # rate-mirrors           _rate-mirrors_hook
     # yad                    _yad_hook_add_gspell
     # yay                    _yay_hook_check_latest
