@@ -1640,12 +1640,12 @@ Main2()
                 tmp=("${built[@]}")
                 built=()
                 for xx in "${tmp[@]}" ; do
-                    built+="${xx##*/}"
+                    built+=("${xx##*/}")
                 done
                 tmp=("${signed[@]}")
                 signed=()
                 for xx in "${tmp[@]}" ; do
-                    signed+="${xx##*/}"
+                    signed+=("${xx##*/}")
                 done
 
                 for xx in "${built[@]}" ; do
