@@ -1924,7 +1924,8 @@ ManageGithubReleaseAssets() {
             pushd "$ASSETSDIR" >/dev/null
             pkg="$(ls -1 *.pkg.tar.* "$REPONAME".{db,files}{,.tar.$REPO_COMPRESSOR}{,.sig} 2>/dev/null)"
             if [ -n "$filelist_txt" ] ; then
-                echo "$pkg" > "$filelist_txt"
+                [ "$RELEASE_ASSETS_REMOTE_BASE" ] || DIE "RELEASE_ASSETS_REMOTE_BASE is not set in ${ASSETS_CONF}!"
+                echo "$pkg" | sed "s|^|$RELEASE_ASSETS_REMOTE_BASE/|" > "$filelist_txt"
             fi
             popd >/dev/null
         fi
