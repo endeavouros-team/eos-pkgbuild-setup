@@ -16,7 +16,7 @@ local RELEASE_TAGS=(
 local SIGNER="manuel@endeavouros.com"    # "EndeavourOS"
 
 ## general options
-local USE_GENERATED_FILELIST="no"                   # may generate 'repofiles.txt' into the repo
+local USE_GENERATED_FILELIST="yes"                  # may generate 'repofiles.txt' into the repo
 local USE_RELEASE_ASSETS="yes"                      # either 'release assets' or "ordinary" github files
 local RELEASE_ASSETS_REMOTE_BASE="https://github.com/endeavouros-team/repo/releases/download/endeavouros"   # download remote release asset files from here
 local PREFER_GIT_OVER_RELEASE=yes
