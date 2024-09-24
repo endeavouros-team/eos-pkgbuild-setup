@@ -1902,7 +1902,7 @@ ManageGithubReleaseAssets() {
 
             if [ -r "$filelist_txt" ] ; then
                 #AssetCmd delete-release-assets --quietly "$tag" "$(basename "$filelist_txt")"
-                assets+=("$(basename "$filelist_txt")")
+                assets+=("${filelist_txt##*/}")
             fi
         fi
 
@@ -1910,7 +1910,7 @@ ManageGithubReleaseAssets() {
 
         if [ -r "$filelist_txt" ] ; then
             echo2 "deleting file $filelist_txt ..."
-            rm -f $filelist_txt
+            rm -f "$filelist_txt"
         fi
 
         ManualCheckOfAssets deletion assets
@@ -1936,7 +1936,7 @@ ManageGithubReleaseAssets() {
             assets+=("${built[@]}")
             if [ -r "$filelist_txt" ] ; then
                 #AssetCmd add-release-assets "$tag" "$filelist_txt"
-                assets+=("$filelist_txt")
+                assets+=("${filelist_txt##*/}")
             fi
         fi
 
