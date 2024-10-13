@@ -211,6 +211,7 @@ Main()
     local arch=""
     local -r DEFAULT_MIRROR_NAME=alpix.eu
     local -r list=/etc/pacman.d/endeavouros-mirrorlist
+    local hide_fallback=no
     local supported_params=(
         "<folder-name>"
         --slow
@@ -222,6 +223,12 @@ Main()
         --no-filelist
         --show-params
     )
+    for arg in "$@" ; do
+        case "$arg" in
+            --show-params)       echo "${supported_params[*]}" ; exit ;;
+            --show-mirror-nicks) hide_fallback=yes ;;
+        esac
+    done
 
     local MIRROR_NAMES=(
         # Get names from the endeavouros-mirrorlist with ad hoc algorithm.
@@ -230,7 +237,7 @@ Main()
         $(grep "^#Server = " $list | awk '{print $NF}')
     )
     if [ ${#MIRROR_NAMES[0]} -eq 0 ] ; then
-        echo2 "==> $progname: no full mirrorlist -> fallback to only configured mirrors"
+        [ $hide_fallback = no ] && echo2 "==> $progname: no full mirrorlist -> fallback to only configured mirrors"
         MIRROR_NAMES=(
             # This implementation picks only lines starting with "Server = ".
             $(grep "^Server = " $list | awk '{print $NF}')
@@ -254,7 +261,6 @@ Main()
             --only-fails | -f) only_fails=yes ;;
             --verbose | -v)    only_fails=no ;;
             --no-filelist) has_filelist=no ;;   # no repofiles.txt
-            --show-params) echo "${supported_params[*]}" ; exit ;;
             --show-mirror-nicks) echo "${MIRROR_NAMES[*]}" ; exit  ;; # for bash completion
             -*) DIE "unsupported parameter '$arg'" ;;
             *) folder="$arg" ;;
