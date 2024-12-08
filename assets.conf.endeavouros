@@ -58,12 +58,14 @@ declare -A PKG_CHANGELOGS=(
     calamares                         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/calamares"
     ckbcomp                           "https://salsa.debian.org/installer-team/console-setup/commits"
     downgrade                         "https://github.com/archlinux-downgrade/downgrade/blob/main/CHANGELOG.md"
+    endeavouros-branding              "https://github.com/endeavouros-team/endeavouros-branding/commits"
     endeavouros-keyring               "https://github.com/endeavouros-team/keyring/commits"
     endeavouros-mirrorlist            "https://github.com/endeavouros-team/PKGBUILDS/commits/master/endeavouros-mirrorlist"
     endeavouros-theming               "https://github.com/endeavouros-team/endeavouros-theming/commits"
     endeavouros-xfce4-terminal-colors "https://github.com/endeavouros-team/endeavouros-xfce4-terminal-colors/commits"
     eos-apps-info                     "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-apps-info"
     eos-bash-shared                   "https://github.com/endeavouros-team/eos-bash-shared/commits"
+    eos-breeze-sddm                   "https://github.com/endeavouros-team/eos-breeze-sddm/commits"
     eos-downgrade                     "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-downgrade"
     eos-dracut                        "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-dracut"
     eos-hooks                         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-hooks"
@@ -114,21 +116,23 @@ PKGNAMES=(                                        # Alphabetically ordered.
     calamares
     ckbcomp
     downgrade/aur
+    endeavouros-branding                    # will replace endeavouros-theming 2024-12 (?)
     endeavouros-keyring
     endeavouros-mirrorlist
-    endeavouros-theming
+    endeavouros-theming                     # will be replaced by endeavouros-branding 2024-12 (?)
     endeavouros-xfce4-terminal-colors
     eos-apps-info
     eos-bash-shared
+    eos-breeze-sddm                         # will replace eos-plasma-sddm-config 2024-12 (?)
     eos-downgrade
-    eos-dracut                   # was: dracut-hook/aur
+    eos-dracut                              # was: dracut-hook/aur
     eos-hooks
     eos-lightdm-gtk-theme
     eos-lightdm-slick-theme
     eos-log-tool
     eos-lxdm-gtk3
     eos-packagelist
-    eos-plasma-sddm-config
+    eos-plasma-sddm-config                  # will be replaced by eos-breeze-sddm 2024-12 (?)
     eos-qogir-icons
     eos-quickstart
     eos-rankmirrors
@@ -146,7 +150,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-update-notifier
     # filesystem
     kernel-install-for-dracut
-    keyserver-rank               # probably not needed?
+    keyserver-rank                          # probably not needed?
     # lsb-release
     nvidia-hook
     nvidia-inst
@@ -161,6 +165,13 @@ PKGNAMES=(                                        # Alphabetically ordered.
     yay/aur
     zfs-dkms/aur
     zfs-utils/aur
+
+    # devel packages
+    eos-settings-budgie-devel
+    eos-settings-cinnamon-devel
+    eos-settings-gnome-devel
+    eos-settings-mate-devel
+    eos-settings-xfce4-devel
 )
 
 # PKGNAMES=( eos-lightdm-gtk-theme )
