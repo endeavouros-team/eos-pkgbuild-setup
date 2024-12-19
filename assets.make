@@ -1107,8 +1107,11 @@ Browser() {
 WantPkgDiffs() {
     local xx="$1"
     local pkgdirname="$2"
+    local changelog_for_pkg=""    # "${PKG_CHANGELOGS[$pkgdirname]}"
 
-    if [ -n "${PKG_CHANGELOGS[$pkgdirname]}" ] ; then
+    changelog_for_pkg="$(eos-pkg-changelog "$pkgdirname" 2>/dev/null)" || return
+
+    if [ "$changelog_for_pkg" ] ; then
         if [ "$pkgdiff" = "unknown" ] ; then
             pkgdiff=no
             read2 -p "Updates and their changelogs are available. Want to see changelogs (Y/n)? " -t $ask_timeout
@@ -1119,7 +1122,7 @@ WantPkgDiffs() {
             fi
             [ "$pkgdiff" = "no" ] && echo2 no.
         fi
-        [ "$pkgdiff" = "yes" ] && PKG_DIFFS+=("${PKG_CHANGELOGS[$pkgdirname]}")
+        [ "$pkgdiff" = "yes" ] && PKG_DIFFS+=("$changelog_for_pkg")
     fi
 }
 
