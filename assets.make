@@ -1109,7 +1109,9 @@ WantPkgDiffs() {
     local pkgdirname="$2"
     local changelog_for_pkg=""    # "${PKG_CHANGELOGS[$pkgdirname]}"
 
-    changelog_for_pkg="$(eos-pkg-changelog "$pkgdirname" 2>/dev/null)" || return
+    Pushd "$ASSETSDIR"
+    changelog_for_pkg="$(eos-pkg-changelog -d -u "$pkgdirname")" || { Popd; return; }
+    Popd
 
     if [ "$changelog_for_pkg" ] ; then
         if [ "$pkgdiff" = "unknown" ] ; then
