@@ -153,7 +153,7 @@ MirrorStateUpdate() {
 RunOnlyIfAllowed() {
     local cmd="$1"
     while true ; do
-        read2 -p "Run '$cmd' now (y/n)? "
+        read2 -p "Run '$cmd' at $PWD now (y/n)? "
         case "$REPLY" in
             [yY]*)
                 $cmd || DIE "'$cmd' failed."
