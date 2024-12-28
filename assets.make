@@ -1124,7 +1124,11 @@ WantPkgDiffs() {
             fi
             [ "$pkgdiff" = "no" ] && echo2 no.
         fi
-        [ "$pkgdiff" = "yes" ] && PKG_DIFFS+=("$changelog_for_pkg")
+        if [ "$pkgdiff" = "yes" ] ; then
+            local urls=()
+            readarray -t urls <<< $(echo "${changelog_for_pkg//|/$'\n'}")
+            PKG_DIFFS+=("${urls[@]}")
+        fi
     fi
 }
 
