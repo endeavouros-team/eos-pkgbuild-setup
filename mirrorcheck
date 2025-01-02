@@ -211,7 +211,7 @@ Main()
     local arch=""
     local -r DEFAULT_MIRROR_NAME=alpix.eu
     local -r list=/etc/pacman.d/endeavouros-mirrorlist
-    local hide_fallback=no
+    local hide_fallback=yes
     local supported_params=(
         "<folder-name>"
         --slow
@@ -236,7 +236,13 @@ Main()
         # This implementation picks only lines starting with "#Server = ".
         $(grep "^#Server = " $list | awk '{print $NF}')
     )
-    if [ ${#MIRROR_NAMES[0]} -eq 0 ] ; then
+    if [ ${#MIRROR_NAMES[@]} -eq 0 ] ; then
+        # This implementation picks only lines starting with "# https://".
+        MIRROR_NAMES=(
+            $(grep "^# https:/" $list | awk '{print $2}')
+        )
+    fi
+    if [ ${#MIRROR_NAMES[@]} -eq 0 ] ; then
         [ $hide_fallback = no ] && echo2 "==> $progname: no full mirrorlist -> fallback to only configured mirrors"
         MIRROR_NAMES=(
             # This implementation picks only lines starting with "Server = ".
