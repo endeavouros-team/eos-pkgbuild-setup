@@ -45,69 +45,7 @@ local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 # - The EndeavourOS names are actually folder names for packages under PKGBUILDS, not actual package names!
 #
 
-## Removed from PKG_CHANGELOGS:
-# endeavouros-skel-default          "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
-# endeavouros-skel-i3wm             "https://github.com/endeavouros-team/endeavouros-i3wm-setup/commits"
-# endeavouros-skel-xfce4            "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
-# nvidia-installer-common           "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-installer-common"
-
-# declare -A PKG_CHANGELOGS=(
-#     akm                               "https://github.com/endeavouros-team/PKGBUILDS/commits/master/akm"
-#     arc-gtk-theme-eos                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/arc-gtk-theme-eos"
-#     bashdb                            "https://aur.archlinux.org/cgit/aur.git/log/?h=bashdb"
-#     calamares                         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/calamares"
-#     ckbcomp                           "https://salsa.debian.org/installer-team/console-setup/commits"
-#     downgrade                         "https://github.com/archlinux-downgrade/downgrade/blob/main/CHANGELOG.md"
-#     endeavouros-branding              "https://github.com/endeavouros-team/endeavouros-branding/commits"
-#     endeavouros-keyring               "https://github.com/endeavouros-team/keyring/commits"
-#     endeavouros-mirrorlist            "https://github.com/endeavouros-team/PKGBUILDS/commits/master/endeavouros-mirrorlist"
-#     endeavouros-theming               "https://github.com/endeavouros-team/endeavouros-theming/commits"
-#     endeavouros-xfce4-terminal-colors "https://github.com/endeavouros-team/endeavouros-xfce4-terminal-colors/commits"
-#     eos-apps-info                     "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-apps-info"
-#     eos-bash-shared                   "https://github.com/endeavouros-team/eos-bash-shared/commits"
-#     eos-breeze-sddm                   "https://github.com/endeavouros-team/eos-breeze-sddm/commits"
-#     eos-downgrade                     "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-downgrade"
-#     eos-dracut                        "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-dracut"
-#     eos-hooks                         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-hooks"
-#     eos-lightdm-gtk-theme             "https://github.com/endeavouros-arm/PKGBUILDS/commits/master/eos-lightdm-gtk-theme"   #??
-#     eos-lightdm-slick-theme           "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-lightdm-slick-theme"
-#     eos-log-tool                      "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-log-tool"
-#     eos-lxdm-gtk3                     "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-lxdm-gtk3"
-#     eos-packagelist                   "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-packagelist"
-#     eos-plasma-sddm-config            "https://github.com/endeavouros-team/eos-plasma-sddm-config/commits"
-#     eos-qogir-icons                   "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-qogir-icons"
-#     eos-quickstart                    "https://github.com/endeavouros-team/eos-quickstart/commits"
-#     eos-rankmirrors                   "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-rankmirrors"
-#     eos-sddm-theme                    "https://github.com/endeavouros-team/eos-sddm-theme/commits"
-#     eos-settings-budgie               "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-budgie"
-#     eos-settings-cinnamon             "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-cinnamon"
-#     eos-settings-gnome                "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-gnome"
-#     eos-settings-i3wm                 "https://github.com/endeavouros-team/endeavouros-i3wm-setup/commits"
-#     eos-settings-lxde                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-lxde"
-#     eos-settings-lxqt                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-lxqt"
-#     eos-settings-mate                 "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-settings-mate"
-#     eos-settings-plasma               "https://github.com/endeavouros-team/eos-settings-plasma/commits"
-#     eos-settings-xfce4                "https://github.com/endeavouros-team/endeavouros-xfce4-theming/commits"
-#     eos-translations                  "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-translations"
-#     eos-update-notifier               "https://github.com/endeavouros-team/PKGBUILDS/commits/master/eos-update-notifier"
-#     filesystem                        "https://gitlab.archlinux.org/archlinux/packaging/packages/filesystem/-/commits"
-#     kernel-install-for-dracut         "https://gitlab.com/dalto.8/kernel-install-for-dracut/commits"
-#     keyserver-rank                    "https://github.com/endeavouros-team/PKGBUILDS/commits/master/keyserver-rank"
-#     lsb-release                       "https://gitlab.archlinux.org/archlinux/packaging/packages/lsb-release/-/commits"
-#     mkinitcpio-openswap               "https://aur.archlinux.org/cgit/aur.git/log/?h=mkinitcpio-openswap"
-#     nvidia-hook                       "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-hook"
-#     nvidia-inst                       "https://github.com/endeavouros-team/PKGBUILDS/commits/master/nvidia-inst"
-#     pahis                             "https://github.com/endeavouros-team/PKGBUILDS/commits/master/pahis"
-#     paru                              "https://github.com/Morganamilo/paru/releases"
-#     rate-mirrors                      "https://github.com/westandskif/rate-mirrors/commits"
-#     reflector-bash-completion         "https://github.com/endeavouros-team/PKGBUILDS/commits/master/reflector-bash-completion"
-#     reflector-simple                  "https://github.com/endeavouros-team/PKGBUILDS/commits/master/reflector-simple"
-#     welcome                           "https://github.com/endeavouros-team/welcome/commits"
-#     yad                               "https://github.com/v1cont/yad/blob/master/NEWS"
-#     yay                               "https://github.com/Jguer/yay/releases"
-#     zfs-dkms                          "https://github.com/openzfs/zfs/releases"
-#     zfs-utils                         "https://github.com/openzfs/zfs/releases"
-# )
+# PKG_CHANGELOGS moved to eos-pkg-changelog.
 
 PKGNAMES=(                                        # Alphabetically ordered.
     akm
@@ -174,7 +112,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-settings-xfce4-devel
 )
 
-# PKGNAMES=( eos-lightdm-gtk-theme )
+# PKGNAMES=( ckbcomp )
 
 # Use option --pkgnames="names" for special checks!
 
@@ -421,147 +359,6 @@ _paper-icon-theme-git_hook() {
     return 11  # pkgver was changed
 }
 
-_ckbcomp_hook_new() {
-    printf "@" >&2
-
-    local data=$(curl -Lsm 10 -o- https://packages.debian.org/source/sid/console-setup)
-    local Pkgver=$(echo "$data" | grep metadata | head -n1 | sed -e 's|.*/console-setup_||' -e 's|_.*||')
-    local PKGBUILD="$PKGBUILD_ROOTDIR"/"$(__generic_get_pkgname $FUNCNAME)"/PKGBUILD
-    local new_url=https://deb.debian.org/debian/pool/main/c/console-setup/console-setup_$Pkgver.tar.xz
-    sed -i "$PKGBUILD" \
-        -e "/^source=.*/a \source=($new_url)"
-}
-
-_ckbcomp_hook() {
-    local tool=ckbcomp
-
-    # new version info
-    local info retval
-    info=$(curl --fail --silent --location --max-time 10 https://salsa.debian.org/installer-team/console-setup/-/tags)
-    retval=$?
-    if [ $retval -ne 0 ] ; then
-        _ckbcomp_hook_new
-        return
-    fi
-    if [ -n "$(echo "$info" | grep "503 Service Unavailable")" ] ; then
-        printf "fetching info failed. " >&2
-        return 1
-    fi
-
-    local dl="https://salsa.debian.org"$(echo "$info" | grep "gl-button btn btn-sm btn-confirm" | head -n1 | sed -E -e 's|.*href="([^"]+)".*|\1|' -e 's|zip$|tar.gz|')
-    local archivesuffix=""
-    local namesuffix=""
-
-    [[ $dl =~ /archive/debian/ ]]     && archivesuffix="/debian"
-    [[ $dl =~ console-setup-debian ]] && namesuffix="-debian"
-
-    # local newver=$(echo "$info" | grep "console-setup Debian release" | head -n1 | sed -E 's|.* release ([0-9\.]+).*|\1|')
-
-    local newver=$(echo "$info" | grep "console-setup-.*\.tar\.gz" | head -n1)
-    newver=$(echo "$newver" | sed -E 's|.*/([0-9\.]+)/.*|\1|')
-
-    if [ -n "$(echo "$newver" | sed 's|[0-9\.]*||g')" ] ; then
-        printf "finding new version failed, got '$newver'" >&2
-        return 1
-    fi
-
-    if [ $(vercmp "$newver" "1.211") -le 0 ] ; then
-        return                 # NOTE: 1.196 - 1.211: 'ckbcomp' hasn't changed!
-    fi
-
-    # current version info
-    local Pkgbuild="$PKGBUILD_ROOTDIR"/$tool/PKGBUILD
-    local Pkgver=$(_Get_pkgver "$Pkgbuild")
-
-    [ "$newver" = "$Pkgver" ] && return
-
-    pushd "$PKGBUILD_ROOTDIR"/$tool >/dev/null
-
-    sed -i PKGBUILD \
-        -e "s|^pkgver=.*|pkgver=$newver|" \
-        -e "s|^source=.*|source=($dl)|" \
-        -e "s|^_namesuffix=.*|_namesuffix='$namesuffix'|" \
-        -e "s|^_archivesuffix=.*|_archivesuffix='$archivesuffix'|"
-
-    if ! updpkgsums PKGBUILD >& /dev/null ; then
-        popd >/dev/null
-        printf "updpkgsums failed " >&2
-        return 1
-    fi
-    if ! makepkg -p PKGBUILD >& /dev/null ; then
-        popd >/dev/null
-        printf "makepkg failed " >&2
-        return 1
-    fi
-    # cleanup makepkg stuff
-    rm -rf src pkg *.zst *.xz *.gz
-
-    if [ ! -x /usr/bin/$tool ] ; then
-        # Cannot compare with non-existing /usr/bin/ckbcomp !!!
-        printf "sorry, ckbcomp is not installed, cannot compare. " >&2
-    else
-        if ! diff src/console-setup-$newver/Keyboard/$tool /usr/bin/$tool >& /dev/null ; then
-            printf "new version $newver is available, $tool differ. " >&2
-            popd >/dev/null
-            return 11  # pkgver (and maybe download link) were changed
-        fi
-    fi
-
-    popd >/dev/null
-}
-
-_ckbcomp_hook_old() {
-    local tool=ckbcomp
-    local Dstdir="$PKGBUILD_ROOTDIR"/$tool
-    local Pkgbuild="$Dstdir"/PKGBUILD
-    local Url="$(_GetSource0 "$Pkgbuild")"
-    Url="$(dirname "$Url")"
-    local newinfo="$(_fetch_that_file "-" "$Url")"
-    [ -n "$newinfo" ] || { printf "Error: $tool: fetching info failed! " >&2 ; return 1 ; }
-    local newbase=console-setup_
-    local newver="$(echo "$newinfo" | grep $newbase | grep "\.tar\.xz" | tail -n 1 | sed "s|^.*\"$newbase\([0-9\.]*\)\.tar.*$|\1|")"
-    local curver="$(_Get_pkgver "$Pkgbuild")"
-    local filebase=$newbase$newver
-
-    if [ "$newver" != "$curver" ] ; then
-        local ff
-        for ff in dsc tar.xz ; do
-            _fetch_that_file "$Dstdir/$filebase.$ff" "$Url"/$filebase.$ff || {
-                printf "Error: $tool: fetching $filebase.$ff failed. " >&2
-                return 1
-            }
-        done
-        local sha256="$(cat "$Dstdir/$filebase.dsc" | grep -A1 ^Checksums-Sha256 | tail -n 1 | awk '{print $1}')"
-        echo "$sha256  $Dstdir/$filebase.tar.xz" | sha256sum -c >& /dev/null || {
-            echo "Error: $tool: sha256 for $filebase.tar.xz does not match!" >&2
-            return 1
-        }
-        rm -f "$Dstdir/$filebase.dsc"
-        sed -i "$Pkgbuild" \
-            -e "s|^pkgver=.*|pkgver=$newver|"
-
-        case "$newver" in
-            "1.199")
-                sed -i "$Pkgbuild"  \
-                    -e 's| cd console-setup-${pkgver}$| cd console-setup|'
-                ;;
-            *)
-                sed -i "$Pkgbuild"  \
-                    -e 's| cd console-setup$| cd console-setup-$pkgver|'
-                ;;
-        esac
-        updpkgsums "$Pkgbuild" 2>/dev/null
-        # echo -n "#" >&2
-        return 11  # pkgver was changed
-    fi
-}
-
-_ckbcomp_hook_change_version_old() {
-    # change "$url" http to https
-    sed -i "$PKGBUILD_ROOTDIR"/ckbcomp/PKGBUILD \
-        -e 's|^url="http:|url="https:|'
-}
-
 _yay_hook_check_latest() {
     # check if AUR PKGBUILD has the latest version of yay from the developer
     local tool=yay
@@ -780,42 +577,54 @@ _diff_file_and_data() {
     meld "$file" "$datafile"
 }
 
-_eos-bash-shared_hook_check_ksetwallpaper_py() {
-    # Check if we have the latest version of file ksetwallpaper.py.
-    # See https://github.com/pashazz/ksetwallpaper/raw/master/ksetwallpaper.py
+# _eos-bash-shared_hook_check_ksetwallpaper_py() {
+#     # Check if we have the latest version of file ksetwallpaper.py.
+#     # See https://github.com/pashazz/ksetwallpaper/raw/master/ksetwallpaper.py
 
-    local file=ksetwallpaper.py
-    local url="https://github.com/pashazz/ksetwallpaper/raw/master/$file"
-    local current="$PKGBUILD_ROOTDIR"/eos-bash-shared/$file                     # old place
-    local new
-    local diffs answer
+#     local file=ksetwallpaper.py
+#     local url="https://github.com/pashazz/ksetwallpaper/raw/master/$file"
+#     local current="$PKGBUILD_ROOTDIR"/eos-bash-shared/$file                     # old place
+#     local new
+#     local diffs answer
 
-    current="$EOS_ROOT/eos-bash-shared/$file"                                  # new place
+#     current="$EOS_ROOT/eos-bash-shared/$file"                                  # new place
 
-    new="$(_fetch_that_file - "$url")"
-    if [ $? -ne 0 ] ; then
-        echo "Warning: cannot fetch '$url'." >&2
-        return 1
-    fi
-    if [ "$(cat "$current")" != "$new" ] ; then
-        local newfile=$(mktemp)
-        _diff_file_and_data "$current" "$new" "$newfile"
-        # diffs="$(_diff_file_and_data "$current" "$new" "$newfile")"
-        # echo "" >&2
-        # echo "$diffs" >&2
-        # echo "" >&2
-        if false ; then
-            read -p "eos-bash-shared: file '$file' differs from current, update (Y/n)? " answer >&2
-            case "$answer" in
-                "" | [yY]*)
-                    rm -f $current
-                    mv $newfile $current
-                    _Updpkgsums "$current"
-                    ;;
-            esac
-        fi
-        rm -f "$newfile"
-    fi
+#     new="$(_fetch_that_file - "$url")"
+#     if [ $? -ne 0 ] ; then
+#         echo "Warning: cannot fetch '$url'." >&2
+#         return 1
+#     fi
+#     if [ "$(cat "$current")" != "$new" ] ; then
+#         local newfile=$(mktemp)
+#         _diff_file_and_data "$current" "$new" "$newfile"
+#         # diffs="$(_diff_file_and_data "$current" "$new" "$newfile")"
+#         # echo "" >&2
+#         # echo "$diffs" >&2
+#         # echo "" >&2
+#         if true ; then
+#             read -p "eos-bash-shared: file '$file' differs from current, update (Y/n)? " answer >&2
+#             case "$answer" in
+#                 "" | [yY]*)
+#                     rm -f $current
+#                     mv $newfile $current
+#                     _Updpkgsums "$current"
+#                     ;;
+#             esac
+#         fi
+#         rm -f "$newfile"
+#     fi
+# }
+
+_ckbcomp_updatehook() {
+    local -r pname=ckbcomp
+    [ -x /bin/$pname ] || return 2
+
+    local url_pkgname="https://salsa.debian.org/installer-team/console-setup/raw/master/Keyboard/$pname"
+    local tmpfile=$(mktemp)
+    curl --fail -Lsm 30 -o$tmpfile "$url_pkgname" || { rm -f $tmpfile; return 3; }
+    diff $tmpfile /bin/$pname >/dev/null || { rm -f $tmpfile; return 0; }
+    rm -f $tmpfile
+    return 1
 }
 
 # Special hooks. Implemented via package hooks.
@@ -824,23 +633,29 @@ _assets_download_break() {
     return 0  # same contents under different asset tags, so always break after first download
 }
 
+ASSET_FAST_UPDATE_CHECKS=(
+    # hook returns:
+    #    0 when update exists
+    #    1 on no update
+    #    2 if cannot make the check (e.g. due to a non-installed package)
+    #    3 on error
+    ckbcomp                _ckbcomp_updatehook
+)
+
 declare -A ASSET_PACKAGE_HOOKS=(
-    assets_mirrors         _assets_download_break                          # special hook
+    assets_mirrors         _assets_download_break                            # special hook
 
-    eos-bash-shared        _eos-bash-shared_hook_check_ksetwallpaper_py    # Check if we have the latest version of file ksetwallpaper.py.
-    paru                   _paru_hook
-
-    # bashdb                 _bashdb_hook                                  # no more needed
+    # bashdb                 _bashdb_hook                                    # no more needed
     # budgie-control-center  _budgie-control-center_hook
-    # ckbcomp                _ckbcomp_hook
-    # ckbcomp                _ckbcomp_hook_change_version
     # downgrade              _downgrade_hook_check_latest
     # dracut                 _dracut_hook                                    # Inform if the Arch version if not older than the EndeavourOS version
-    # eos-lightdm-gtk-theme  _eos-lightdm-gtk-theme_hook                   # Clone package source of eos-lightdm-gtk-theme from EndeavourOS ARM
+    # eos-bash-shared        _eos-bash-shared_hook_check_ksetwallpaper_py    # Check if we have the latest version of file ksetwallpaper.py.
+    # eos-lightdm-gtk-theme  _eos-lightdm-gtk-theme_hook                     # Clone package source of eos-lightdm-gtk-theme from EndeavourOS ARM
     # inxi                   _inxi_hook_check_latest
     # kalu                   _kalu_hook_fix_files
     # nvidia-installer-db    _nvidia-installer-db_hook
     # paper-icon-theme-git   _paper-icon-theme-git_hook
+    # paru                   _paru_hook
     # rate-mirrors           _rate-mirrors_hook
     # yad                    _yad_hook_add_gspell
     # yay                    _yay_hook_check_latest

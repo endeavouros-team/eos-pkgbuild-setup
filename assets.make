@@ -393,11 +393,7 @@ LocalVersion()
            ;;
     esac
 
-    local tail="$(echo "$pkgs" | sed 's|^.*/'"$Pkgname"'-||')"
-    local ver="$(echo "$tail" | cut -d '-' -f 1)"
-    local rel="$(echo "$tail" | cut -d '-' -f 2)"
-
-    echoreturn "${ver}-$rel"
+    pkg-name-components --real VR "$pkgs"
 }
 
 AurMarkingFail() {
@@ -1400,6 +1396,8 @@ Main2()
     [ -n "$EOS_ROOT" ] || DIE "EOS_ROOT is not set in /etc/$PROGNAME.conf!"
     [ -n "$_PACKAGER" ] || DIE "_PACKAGER is not set in /etc/$PROGNAME.conf!"
 
+    declare -A ASSET_FAST_UPDATE_CHECKS=()
+
     source $ASSETS_CONF                     # local variables (with CAPITAL letters)
 
     export PACKAGER="$_PACKAGER"
@@ -1452,6 +1450,7 @@ Main2()
     local -r OK="${BLUE}OK${RESET}"
     local -r WAITING="${CYAN}VERSION SKIP${RESET}"
     local -r CHANGED="${YELLOW}CHANGED${RESET}"
+    local ret=""
 
     listing_updates=yes
 
@@ -1472,11 +1471,6 @@ Main2()
             [ -n "$pkgdirname" ] || DIE "converting or fetching '$xx' failed"
             PkgbuildExists "$pkgdirname" "line $LINENO" || continue
 
-            # get versions from latest PKGBUILDs
-            tmp="$(PkgBuildVersion "$PKGBUILD_ROOTDIR/$pkgdirname")"
-            test -n "$tmp" || DIE "PkgBuildVersion for '$xx' failed"
-            newv[$pkgdirname]="$tmp"
-
             # get current versions from local asset files
             Pkgname="$(PkgBuildName "$pkgdirname")"
             tmpcurr="$(LocalVersion "$ASSETSDIR/$Pkgname")"
@@ -1487,6 +1481,24 @@ Main2()
                     tmpcurr="$notexist"
                     ;;
             esac
+
+            if [ "${ASSET_FAST_UPDATE_CHECKS[$pkgdirname]}" ] ; then
+                ${ASSET_FAST_UPDATE_CHECKS[$pkgdirname]}
+                ret=$?
+                case "$ret" in
+                    0) ;;    # there are changes, so carry on!
+                    1) ShowResult "$OK ($tmpcurr)" "$hookout"; continue ;;
+                    2) echo2 -n "warning: fast check: prerequisite for the check is missing. " ;;
+                    3) echo2 -n "warning: fast check: hook failed. " ;;
+                    *) echo2 "error: fast check hook returned $ret"; continue ;;
+                esac
+            fi
+
+            # get versions from latest PKGBUILDs
+            tmp="$(PkgBuildVersion "$PKGBUILD_ROOTDIR/$pkgdirname")"
+            test -n "$tmp" || DIE "PkgBuildVersion for '$xx' failed"
+
+            newv[$pkgdirname]="$tmp"
             oldv[$pkgdirname]="$tmpcurr"
 
             cmpresult=$(Vercmp "$tmp" "$tmpcurr")
