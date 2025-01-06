@@ -577,44 +577,6 @@ _diff_file_and_data() {
     meld "$file" "$datafile"
 }
 
-# _eos-bash-shared_hook_check_ksetwallpaper_py() {
-#     # Check if we have the latest version of file ksetwallpaper.py.
-#     # See https://github.com/pashazz/ksetwallpaper/raw/master/ksetwallpaper.py
-
-#     local file=ksetwallpaper.py
-#     local url="https://github.com/pashazz/ksetwallpaper/raw/master/$file"
-#     local current="$PKGBUILD_ROOTDIR"/eos-bash-shared/$file                     # old place
-#     local new
-#     local diffs answer
-
-#     current="$EOS_ROOT/eos-bash-shared/$file"                                  # new place
-
-#     new="$(_fetch_that_file - "$url")"
-#     if [ $? -ne 0 ] ; then
-#         echo "Warning: cannot fetch '$url'." >&2
-#         return 1
-#     fi
-#     if [ "$(cat "$current")" != "$new" ] ; then
-#         local newfile=$(mktemp)
-#         _diff_file_and_data "$current" "$new" "$newfile"
-#         # diffs="$(_diff_file_and_data "$current" "$new" "$newfile")"
-#         # echo "" >&2
-#         # echo "$diffs" >&2
-#         # echo "" >&2
-#         if true ; then
-#             read -p "eos-bash-shared: file '$file' differs from current, update (Y/n)? " answer >&2
-#             case "$answer" in
-#                 "" | [yY]*)
-#                     rm -f $current
-#                     mv $newfile $current
-#                     _Updpkgsums "$current"
-#                     ;;
-#             esac
-#         fi
-#         rm -f "$newfile"
-#     fi
-# }
-
 _ckbcomp_updatehook() {
     local -r pname=ckbcomp
     [ -x /bin/$pname ] || return 2
@@ -649,7 +611,6 @@ declare -A ASSET_PACKAGE_HOOKS=(
     # budgie-control-center  _budgie-control-center_hook
     # downgrade              _downgrade_hook_check_latest
     # dracut                 _dracut_hook                                    # Inform if the Arch version if not older than the EndeavourOS version
-    # eos-bash-shared        _eos-bash-shared_hook_check_ksetwallpaper_py    # Check if we have the latest version of file ksetwallpaper.py.
     # eos-lightdm-gtk-theme  _eos-lightdm-gtk-theme_hook                     # Clone package source of eos-lightdm-gtk-theme from EndeavourOS ARM
     # inxi                   _inxi_hook_check_latest
     # kalu                   _kalu_hook_fix_files
