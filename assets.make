@@ -12,6 +12,7 @@ printf2()    { printf "$@" >&2 ; }    # output to stderr
 
 DIE() {
     echo2 "Error: $@"
+    echo2 "Call stack lines: ${BASH_LINENO[*]}"
     if [ "${FUNCNAME[1]}" = "Main" ] ; then
         Usage
     fi
@@ -393,7 +394,7 @@ LocalVersion()
            ;;
     esac
 
-    pkg-name-components --real VR "$pkgs"
+    pkg-name-components --real EVR "$pkgs"
 }
 
 AurMarkingFail() {
@@ -1231,13 +1232,22 @@ ListPkgsWithName() {
     local compr="$2"
     local name
     local tmp=""
+    local dir=${Pkgname%/*}
 
+    if [ "$Pkgname" = "$dir" ] ; then
+        dir="."
+    else
+        Pkgname=${Pkgname##*/}
+    fi
+
+    Pushd "$dir"
     tmp=$(/bin/ls -1v "$Pkgname"-*.pkg.tar.$compr 2> /dev/null | grep -E "${Pkgname}-[^-]+-[^-]+-[^\.]+\.pkg\.tar\.$compr$")
+    Popd
     [ "$tmp" ] || return
 
     for name in $tmp ; do
         if [ "$(echo "$name" | pkg-name-components N)" = "$Pkgname" ] ; then
-            echo "$name"
+            echo "$dir/$name"
         fi
     done
 }
@@ -1451,6 +1461,8 @@ Main2()
     local -r WAITING="${CYAN}VERSION SKIP${RESET}"
     local -r CHANGED="${YELLOW}CHANGED${RESET}"
     local ret=""
+    local fastmsg=""
+    local fastfunc=""
 
     listing_updates=yes
 
@@ -1476,20 +1488,20 @@ Main2()
             tmpcurr="$(LocalVersion "$ASSETSDIR/$Pkgname")"
             case "$tmpcurr" in
                 "") DIE "LocalVersion for '$xx' failed" ;;
-                "-")
+                "-" | 0)
                     # package (and version) not found
                     tmpcurr="$notexist"
                     ;;
             esac
 
-            if [ "${ASSET_FAST_UPDATE_CHECKS[$pkgdirname]}" ] ; then
-                ${ASSET_FAST_UPDATE_CHECKS[$pkgdirname]}
+            fastfunc="${ASSET_FAST_UPDATE_CHECKS[$pkgdirname]}"
+            if [ "$fastfunc" ] ; then
+                fastmsg="$($fastfunc)"
                 ret=$?
                 case "$ret" in
                     0) ;;    # there are changes, so carry on!
-                    1) ShowResult "$OK ($tmpcurr)" "$hookout"; continue ;;
-                    2) echo2 -n "warning: fast check: prerequisite for the check is missing. " ;;
-                    3) echo2 -n "warning: fast check: hook failed. " ;;
+                    1) ShowResult "$OK ($tmpcurr)" "$fastmsg"; continue ;;
+                    2|3) ;;
                     *) echo2 "error: fast check hook returned $ret"; continue ;;
                 esac
             fi

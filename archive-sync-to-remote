@@ -189,19 +189,36 @@ AddsAndRemoves() {
     ShowFileInfo "removals from remote" "${remove_remote[@]}"
 
     local allow=true   # true or false
+    local arr=() remo renamed_to_remo=()
 
     if $allow ; then
         # local adds
         if [ ${#add_local[@]} -gt 0 ] ; then
             for file in "${add_local[@]}" ; do
-                download-release-assets "$tag" "$file" || return $?
+                ## local file name may include : or +, so convert them for github
+                # remo=${file/:/COLON}
+                # remo=${remo/+/PLUS}
+                download-release-assets "$tag" "$remo" || return $?
+                # [ "$remo" != "$file" ] && mv "$remo" "$file"
                 sleep 1
             done
         fi
 
         # remote adds
         if [ ${#add_remote[@]} -gt 0 ] ; then
-            add-release-assets "$tag" "${add_remote[@]}" || return $?
+            # rename local name with :/+ to COLON/PLUS for remote
+            arr=()
+            for file in "${add_remote[@]}" ; do
+                remo=${file/:/COLON}
+                remo=${remo/+/PLUS}
+                arr+=("$remo")
+                if [ "$file" != "$remo" ] ; then
+                    cp "$file" "$remo"
+                    renamed_to_remo+=("$remo")
+                fi
+            done
+            add-release-assets "$tag" "${arr[@]}" || return $?
+            rm -f "${renamed_to_remo[@]}"
             sleep 1
         fi
 
@@ -212,7 +229,14 @@ AddsAndRemoves() {
 
         # remote removes
         if [ ${#remove_remote[@]} -gt 0 ] ; then
-            delete-release-assets --quietly "$tag" "${remove_remote[@]}" || return $?
+            arr=()
+            # rename :/+ to COLON/PLUS
+            for file in "${remove_remote[@]}" ; do
+                remo=${file/:/COLON}
+                remo=${remo/+/PLUS}
+                arr+=("$remo")
+            done
+            delete-release-assets --quietly "$tag" "${arr[@]}" || return $?
             sleep 1
         fi
     fi
@@ -233,7 +257,7 @@ FilterPackages() { grep -P '\.xz$|\.zst$' ; }    # Note: exclude *.sig files for
 Main() {
     local tag=""
     local dryrun=no
-    local keep=5              # keeps max 5 of each package
+    local keep=5              # keeps max 5 latest of each package
     local locals=""
     local remotes=""
 
@@ -242,7 +266,7 @@ Main() {
     Tag || return $?
 
     locals=$(/usr/bin/ls -1 | FilterPackages)
-    remotes=$(release-asset-names "$tag" | FilterPackages)
+    remotes=$(release-asset-names "$tag" | FilterPackages | sed -e 's|COLON|:|g' -e 's|PLUS|+|')
 
     AddsAndRemoves || return $?
 }

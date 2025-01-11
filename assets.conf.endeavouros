@@ -579,14 +579,24 @@ _diff_file_and_data() {
 
 _ckbcomp_updatehook() {
     local -r pname=ckbcomp
-    [ -x /bin/$pname ] || return 2
+    if [ ! -x /bin/$pname ] ; then
+        echo "info: package $pname is not installed but needed by the fast update"
+        return 2
+    fi
 
     local url_pkgname="https://salsa.debian.org/installer-team/console-setup/raw/master/Keyboard/$pname"
+    local ret=0               # assume changes exist
     local tmpfile=$(mktemp)
-    curl --fail -Lsm 30 -o$tmpfile "$url_pkgname" || { rm -f $tmpfile; return 3; }
-    diff $tmpfile /bin/$pname >/dev/null || { rm -f $tmpfile; return 0; }
+
+    if ! curl --fail -Lsm 30 -o$tmpfile "$url_pkgname" ; then
+        echo "info: fast update check failed"
+        ret=3
+    elif diff $tmpfile /bin/$pname >/dev/null ; then
+        echo "no real changes"
+        ret=1
+    fi
     rm -f $tmpfile
-    return 1
+    return $ret
 }
 
 # Special hooks. Implemented via package hooks.

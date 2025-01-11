@@ -20,9 +20,10 @@
 # The assets can be downloaded from:
 #     https://github.com/USER/REPONAME/releases/download/TAG
 
+echo2() { echo "$@" >&2 ; }
 DIE() {
-    echo "ERROR: ""$1" >&2
-    echo "Usage: $0 TAG asset(s)" >&2
+    echo2 "ERROR: ""$1"
+    echo2 "Usage: $0 TAG asset(s)"
     exit 1
 }
 
@@ -44,7 +45,9 @@ Main() {
     done
     local asset
     local assets=()
+    local coloned=()
     local existing_tags
+    local remo
 
     # Note: we do this in the git folder, not in the asset folder
 
@@ -56,28 +59,37 @@ Main() {
     done
     test "$TAG" = "$xx" || DIE "TAG '$TAG' is not in existing tags [$existing_tags]"
 
-    if [ 1 -eq 1 ] ; then
+    if true ; then
         for asset in "$@" ; do
             test -r "$asset" || DIE "asset '$asset' does not exist."
-            assets+=("-a" "$asset")
-            [ $quietly = no ] && echo "adding asset $(basename "$asset")" >&2
+            remo=${asset/:/COLON}         # convert special chars for github !!
+            remo=${remo/+/PLUS}           # convert special chars for github !!
+            if [ "$remo" != "$asset" ] ; then
+                cp "$asset" "$remo"
+                coloned+=("$remo")
+                assets+=("-a" "$remo")
+            else
+                assets+=("-a" "$asset")
+            fi
+            [ $quietly = no ] && echo2 "adding asset $(basename "$asset")"
         done
         if [ $quietly = no ] ; then
             hub release edit "${assets[@]}" -m "" "$TAG"
         else
             hub release edit "${assets[@]}" -m "" "$TAG" 2> /dev/null
         fi
-    else
-        for asset in "$@" ; do
-            test -r "$asset" || DIE "asset '$asset' does not exist."
-            if [ -z "$(release-asset-names "$TAG" "$asset")" ] ; then
-                [ $quietly = no ] && echo "adding asset $(basename "$asset") to '$TAG'" >&2
-                hub release edit -a "$asset" -m "" "$TAG"
-                sleep 0.5
-            else
-                DIE "asset '$asset' already exists at github!?"
-            fi
-        done
+        rm -f "${coloned[@]}"
+    # else
+    #     for asset in "$@" ; do
+    #         test -r "$asset" || DIE "asset '$asset' does not exist."
+    #         if [ -z "$(release-asset-names "$TAG" "$asset")" ] ; then
+    #             [ $quietly = no ] && echo2 "adding asset $(basename "$asset") to '$TAG'"
+    #             hub release edit -a "$asset" -m "" "$TAG"
+    #             sleep 0.5
+    #         else
+    #             DIE "asset '$asset' already exists at github!?"
+    #         fi
+    #     done
     fi
 }
 

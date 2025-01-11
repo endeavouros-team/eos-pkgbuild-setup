@@ -2,34 +2,55 @@
 
 HubRelease() {
     if which logstuff >& /dev/null ; then
-        if ! logstuff state ; then
-            logstuff on
-        fi
+        logstuff state || logstuff on
     fi
     hub release "$@"
 }
-
+DIE() {
+    echo "$progname: error: $1" >&2
+    Usage 1
+}
 Usage() {
-    local progname=$(basename "$0")
-    cat <<EOF
-Usage: $progname tag [file-pattern]
-EOF
-    [ -n "$1" ] && exit "$1"
+    echo "Usage: $progname tag [file-pattern]" >&2
+    [ "$1" ] && exit $1
 }
 
 Main()
 {
+    local -r progname=${0##*/}
     local tag="$1"
-    local pattern="$2"
+    local file_pattern="$2"
+    local patternspec=""
+    local pwd_orig="$PWD"
+    local tmpdir=""
+    local remo good_file good_files=()
 
-    if [ -z "$tag" ] ; then
-        Usage 0
-    fi
-    if [ -n "$pattern" ] ; then
-        pattern="-i $pattern"
-    fi
+    [ -d .git ] || DIE "current folder must have a .git subfolder."
 
-    HubRelease download $tag $pattern
+    [ "$tag" ] || Usage 0
+    [ "$file_pattern" ] && patternspec="-i $file_pattern"
+
+    tmpdir=$(mktemp -d)
+    pushd "$tmpdir" >/dev/null
+
+    ln -s "$pwd_orig/.git"
+
+    # download specified release assets
+    HubRelease download $tag $patternspec
+
+    # convert names of downloaded files if needed
+    for remo in $(/bin/ls -1) ; do
+        good_file=${remo/COLON/:}
+        good_file=${good_file/PLUS/+}
+        [ "$remo" != "$good_file" ] && mv "$remo" "$good_file"
+        good_files+=("$good_file")
+    done
+
+    mv "${good_files[@]}" "$pwd_orig"
+
+    popd >/dev/null
+
+    rm -rf "$tmpdir"
 }
 
 Main "$@"
