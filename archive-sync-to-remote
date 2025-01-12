@@ -189,17 +189,15 @@ AddsAndRemoves() {
     ShowFileInfo "removals from remote" "${remove_remote[@]}"
 
     local allow=true   # true or false
-    local arr=() remo renamed_to_remo=()
 
     if $allow ; then
+        local arr=() remo renamed_to_remo=()
+
         # local adds
         if [ ${#add_local[@]} -gt 0 ] ; then
-            for file in "${add_local[@]}" ; do
+            for remo in "${add_local[@]}" ; do
                 ## local file name may include : or +, so convert them for github
-                # remo=${file/:/COLON}
-                # remo=${remo/+/PLUS}
-                download-release-assets "$tag" "$remo" || return $?
-                # [ "$remo" != "$file" ] && mv "$remo" "$file"
+                download-release-assets "$tag" "$remo*" || return $?
                 sleep 1
             done
         fi
