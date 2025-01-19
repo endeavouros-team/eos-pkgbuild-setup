@@ -57,7 +57,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     endeavouros-branding                    # will replace endeavouros-theming 2024-12 (?)
     endeavouros-keyring
     endeavouros-mirrorlist
-    endeavouros-theming                     # will be replaced by endeavouros-branding 2024-12 (?)
+    # endeavouros-theming                     # will be replaced by endeavouros-branding 2024-12 (?)
     endeavouros-xfce4-terminal-colors
     eos-apps-info
     eos-bash-shared
@@ -105,11 +105,11 @@ PKGNAMES=(                                        # Alphabetically ordered.
     zfs-utils/aur
 
     # devel packages
-    eos-settings-budgie-devel
-    eos-settings-cinnamon-devel
-    eos-settings-gnome-devel
-    eos-settings-mate-devel
-    eos-settings-xfce4-devel
+    #eos-settings-budgie-devel
+    #eos-settings-cinnamon-devel
+    #eos-settings-gnome-devel
+    #eos-settings-mate-devel
+    #eos-settings-xfce4-devel
 )
 
 # PKGNAMES=( ckbcomp )

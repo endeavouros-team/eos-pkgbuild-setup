@@ -53,11 +53,14 @@ Tag() {
                     echo2 "Using tag: $tag"
                     return 0
                     ;;
-            esac
-            read2 -p "OK to use tag '$tag'? [Y/n] "
-            case "$REPLY" in
-                "" | [yY]*) ;;
-                *) return 1 ;;
+                *)
+                    echo2 "Detected tags: ${available_tags[*]}"
+                    read2 -p "Use tag '$tag'? [Y/n] "
+                    case "$REPLY" in
+                        "" | [yY]*) ;;
+                        *) return 1 ;;
+                    esac
+                    ;;
             esac
             ;;
         "")
@@ -188,10 +191,13 @@ AddsAndRemoves() {
     ShowFileInfo "removals from local"  "${remove_local[@]}"
     ShowFileInfo "removals from remote" "${remove_remote[@]}"
 
-    local allow=true   # true or false
-
-    if $allow ; then
+    if [ "$dryrun" = no ] ; then
         local arr=() remo renamed_to_remo=()
+        local handle_chmods=no
+
+        case "$(/bin/ls -ld .)" in
+            "dr-x"*) handle_chmods=yes; chmod u+w . ;;
+        esac
 
         # local adds
         if [ ${#add_local[@]} -gt 0 ] ; then
@@ -238,6 +244,7 @@ AddsAndRemoves() {
             sleep 1
         fi
     fi
+    [ "$handle_chmods" = yes ] && chmod u-w .
     printf2 "\n<<<<<<<<<< Done. <===============\n\n"
 }
 
