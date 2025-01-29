@@ -311,7 +311,7 @@ Build()
       LANG=C makepkg --clean $opts 2>/dev/null >"$log" || {
           if [ -z "$(grep "$missdeps:" "$log")" ] ; then
               Popd -c2
-              DIE "makepkg for '$Pkgname' failed"
+              DIE "makepkg for '$Pkgname' failed (missing deps, see $log)"
           fi
           msg="Installing $(echo "$missdeps" | tr [:upper:] [:lower:])"
           if IncludesOption "$opts" "--rmdeps" || IncludesOption "$opts" "-r" ; then
@@ -324,7 +324,7 @@ Build()
           local wrapper=/usr/bin/pacman-for-assets.make
           [ -x "$wrapper" ] || DIE "sorry, $wrapper does not exist!"
 
-          PACMAN=$wrapper makepkg --syncdeps --clean $opts >/dev/null || { Popd -c2 ; DIE "makepkg for '$Pkgname' failed" ; }
+          PACMAN=$wrapper makepkg --syncdeps --clean $opts >"$log" || { Popd -c2 ; DIE "makepkg for '$Pkgname' failed (see $log)" ; }
       }
       pkgs=(*.pkg.tar.$_COMPRESSOR)
       case "$pkgs" in
