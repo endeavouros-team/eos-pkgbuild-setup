@@ -203,8 +203,13 @@ AddsAndRemoves() {
         if [ ${#add_local[@]} -gt 0 ] ; then
             for remo in "${add_local[@]}" ; do
                 ## local file name may include : or +, so convert them for github
-                download-release-assets "$tag" "$remo*" || return $?
-                sleep 1
+                case "$remo" in
+                    *.sig) ;;    # download-release-assets will get this too!
+                    *) 
+                        download-release-assets "$tag" "$remo*" || return $?   # remove * from $remo* ??
+                        sleep 1
+                        ;;
+                esac
             done
         fi
 
