@@ -70,7 +70,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-log-tool
     eos-lxdm-gtk3
     eos-packagelist
-    eos-plasma-sddm-config                  # will be replaced by eos-breeze-sddm 2024-12 (?)
+    # eos-plasma-sddm-config                  # will be replaced by eos-breeze-sddm 2024-12 (?)
     eos-qogir-icons
     eos-quickstart
     eos-rankmirrors
