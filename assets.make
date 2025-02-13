@@ -1303,10 +1303,15 @@ DowngradeProbibited() {
 }
 
 ShowResult() {
-    local verdict="$1"
-    local hookout="$2"
+    local -r verdict="$1"
+    local -r hookout="$2"
+    local -r fastfunc="$3"
     if [ -n "$hookout" ] ; then
-        echo2 "$verdict  [hook: $hookout]"
+        if [ "$fastfunc" ] ; then
+            echo2 "$verdict  [$fastfunc: $hookout]"
+        else
+            echo2 "$verdict  [hook: $hookout]"
+        fi
     else
         echo2 "$verdict"
     fi
@@ -1500,7 +1505,7 @@ Main2()
                 ret=$?
                 case "$ret" in
                     0) ;;    # there are changes, so carry on!
-                    1) ShowResult "$OK ($tmpcurr)" "$fastmsg"; continue ;;
+                    1) ShowResult "$OK ($tmpcurr)" "$fastmsg" "$fastfunc" ; continue ;;
                     2|3) ;;
                     *) echo2 "error: fast check hook returned $ret"; continue ;;
                 esac
