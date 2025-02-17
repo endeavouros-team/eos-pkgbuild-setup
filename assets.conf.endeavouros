@@ -54,14 +54,14 @@ PKGNAMES=(                                        # Alphabetically ordered.
     calamares
     ckbcomp
     downgrade/aur
-    endeavouros-branding                    # will replace endeavouros-theming 2024-12 (?)
+    endeavouros-branding
     endeavouros-keyring
+    endeavouros-konsole-colors
     endeavouros-mirrorlist
-    # endeavouros-theming                     # will be replaced by endeavouros-branding 2024-12 (?)
     endeavouros-xfce4-terminal-colors
     eos-apps-info
     eos-bash-shared
-    eos-breeze-sddm                         # will replace eos-plasma-sddm-config 2024-12 (?)
+    eos-breeze-sddm
     eos-downgrade
     eos-dracut                              # was: dracut-hook/aur
     eos-hooks
@@ -70,7 +70,6 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-log-tool
     eos-lxdm-gtk3
     eos-packagelist
-    # eos-plasma-sddm-config                  # will be replaced by eos-breeze-sddm 2024-12 (?)
     eos-qogir-icons
     eos-quickstart
     eos-rankmirrors
@@ -145,7 +144,6 @@ PKGNAMES_WAIT=(
 declare -A PKG_MAKEPKG_OPTIONS=(
     eos-dracut                 "--nodeps"
     eos-lightdm-slick-theme    "--nodeps"
-    eos-plasma-sddm-config     "--nodeps"
     eos-sddm-theme             "--nodeps"
     eos-settings-plasma        "--nodeps"
     kernel-install-for-dracut  "--nodeps"
