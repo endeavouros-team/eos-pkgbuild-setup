@@ -432,11 +432,30 @@ ExplainHookMarks() {
     printf2 "\n"
 }
 
+ShowPkgListWithTitle() {   # Show lines like: $title name [name...]
+    local title="$1"
+    shift
+    local name
+    local line=""
+    local columns="$COLUMNS"
+    [ "$columns" ] || columns=80
+
+    for name in "$@" ; do
+        [ "$line" ] || line="$title"
+        line+=" $name"
+        if [ ${#line} -gt $((columns-10)) ]  ; then
+            printf2 "%s\n" "$line"
+            line=""
+        fi
+    done
+    [ "$line" ] && printf2 "%s\n" "$line"
+}
+
 FetchAurPkgs() {
     local pkgs
     readarray -t pkgs <<< $(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
     if [ "${pkgs[0]}" ] ; then
-        echo2 "==> From AUR: ${pkgs[*]}"
+        ShowPkgListWithTitle "==> From AUR:" "${pkgs[@]}"
         local -r url="https://aur.archlinux.org"
         curl -Lsm 30 "$url" >/dev/null || DIE "sorry, $url is not currently available!"
         rm -rf "${pkgs[@]}"
