@@ -51,7 +51,6 @@ PKGNAMES=(                                        # Alphabetically ordered.
     akm
     arc-gtk-theme-eos
     bashdb/aur
-    calamares
     ckbcomp
     downgrade/aur
     endeavouros-branding
@@ -102,6 +101,8 @@ PKGNAMES=(                                        # Alphabetically ordered.
     yay/aur
     zfs-dkms/aur
     zfs-utils/aur
+
+    calamares
 
     # devel packages
     #eos-settings-budgie-devel
