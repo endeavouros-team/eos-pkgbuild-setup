@@ -1078,19 +1078,16 @@ RunPreHooks()
 GitUpdate_repo() {
     [ "$PREFER_GIT_OVER_RELEASE" = "yes" ] || return
 
-    local newrepodir
+    local -r app=/usr/bin/EosGitUpdate
+    local newrepodir="$GITDIR"
+
     if [ -n "$built" ] || [ "$repoup" = "1" ] ; then
-        newrepodir="$GITDIR"
         # if [ -e "$newrepodir/.GitUpdate" ] ; then
-            if [ -x /usr/bin/GitUpdate ] ; then
-                FinalStopBeforeSyncing "$REPONAME repo"
-                pushd "$newrepodir" >/dev/null
-                /usr/bin/GitUpdate "$ARCH: $*" "$ASSETSDIR" || DIE "GitUpdate failed!"
-                popd >/dev/null
-                ManualCheckOfAssets addition repo
-            else
-                WARN "$FUNCNAME: no GitUpdate app found."
-            fi
+            FinalStopBeforeSyncing "$REPONAME repo"
+            Pushd "$newrepodir"
+            $app "$ARCH: $*" "$ASSETSDIR" || DIE "$app failed!"
+            Popd
+            ManualCheckOfAssets addition repo
         # fi
     fi
 }
@@ -1978,7 +1975,7 @@ ManageGithubReleaseAssets() {
 
         if [ "$use_filelist" = "yes" ] ; then
             # create a list of package and db files that should be also on the mirror
-            pushd "$ASSETSDIR" >/dev/null
+            Pushd "$ASSETSDIR"
             pkg="$(ls -1 *.pkg.tar.* "$REPONAME".{db,files}{,.tar.$REPO_COMPRESSOR}{,.sig} 2>/dev/null)"
             if [ -n "$filelist_txt" ] ; then
                 [ "$RELEASE_ASSETS_REMOTE_BASE" ] || DIE "RELEASE_ASSETS_REMOTE_BASE is not set in ${ASSETS_CONF}!"

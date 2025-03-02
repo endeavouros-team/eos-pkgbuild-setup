@@ -114,23 +114,11 @@ CheckDiff() {
     case "$diff_x86_64" in
         2) DIE "'diff $srcdir $dstdir' failed." ;;
     esac
-
-    # ARM news check!
-    if [ "$reponame" = "endeavouros" ] && [ "$handle_also_arm" = "yes" ] ; then
-        ArmPkgCheck check $file_arm_diff
-        diff_arm=$?
-        case "$diff_arm" in
-            2) DIE "ArmPkgCheck check failed." ;;
-        esac
-    fi
 }
 
 ReplaceAssets() {
     case "$reponame" in
         endeavouros)
-            if [ $diff_arm -eq 1 ] ; then
-                ArmPkgCheck copy || DIE "ArmPkgCheck copy failed."
-            fi
             if [ $diff_x86_64 -eq 1 ] ; then
                 rm -f "$dstdir"/*.{db,files,sig,xz,zst}
                 cp -p "$srcdir"/*.{db,files,sig,xz,zst} "$dstdir"
@@ -217,8 +205,6 @@ Main()
 {
     local commit_msg="$1"
     local ASSETSDIR="$2"
-    local commit_msg_arm=""
-    local handle_also_arm=no          # yes or no; will be no later
 
     # [ -f .GitUpdate ] || DIE "no .GitUpdate file in folder $PWD"
     [ -d .git ]       || DIE "no .git folder in $PWD"
@@ -232,8 +218,6 @@ Main()
     local git_adds=""
     local statefile=""
     local diff_x86_64=0                     # 1 = has updates
-    local diff_arm=0                        # 1 = has updates
-    local file_arm_diff=/tmp/diffs_arm.txt
     local file_x86_64_diff=/tmp/diffs_x86_64.txt
 
     CheckDiff
@@ -243,44 +227,14 @@ Main()
         cat $file_x86_64_diff >&2
         rm -f $file_x86_64_diff
     fi
-    if [ $diff_arm -ne 0 ] ; then
-        echo2 "==> ARM diffs:"
-        cat $file_arm_diff >&2
-        rm -f $file_arm_diff
-    fi
 
-    if [ $diff_x86_64 -ne 0 ] || [ $diff_arm -ne 0 ] ; then
+    if [ $diff_x86_64 -ne 0 ] ; then
         printf2 "\nChanges detected and shown above.\nWill replace local assets after 'git pull', then sync all to github.\n\n"
         read2 -p "Continue (Y/n)? "
         case "$REPLY" in
             [nN]*) DIE "aborted!";;
         esac
 
-        # x86_64 always should have a commit message, but Arm may not have it.
-        if [ $diff_arm -ne 0 ] ; then
-            if [ -n "$commit_msg" ] ; then
-                echo2 "Current commit message: '$commit_msg'"
-            fi
-            read2 -p "A commit message for ARM changes is required. Get it automatically (Y/n)? "
-            case "$REPLY" in
-                [Yy]* | "")
-                    commit_msg_arm="ARM: $(GetArmCommitMessage)"
-                    printf2 "==> Commit message for ARM:\n    %s\n" "$commit_msg_arm"
-                    read2 -p "OK to continue (Y/n)? "
-                    case "$REPLY" in
-                        [nN]*) DIE "aborted!" ;;
-                    esac
-                    ;;
-                *)
-                    DIE "no commit message for ARM changes."
-                    ;;
-            esac
-            if [ -n "$commit_msg" ] ; then
-                commit_msg+=", $commit_msg_arm"
-            else
-                commit_msg="$commit_msg_arm"
-            fi
-        fi
         if [ -z "$commit_msg" ] ; then
             read2 -p "Commit message is still empty. Give it now: " commit_msg
         fi

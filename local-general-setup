@@ -59,7 +59,7 @@ Main() {
     ignores=(
         ".gitignore"          # version control not needed for these files
         ".no-cd"              # used by package cd-path (optional)
-        ".GitUpdate"          # used by package GitUpdate
+        ".GitUpdate"          # used by app EosGitUpdate
         EXPERIMENTAL          # ad hoc stuff (optional)
         TODO                  # ditto
         RCS                   # ditto
