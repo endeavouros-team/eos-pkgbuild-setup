@@ -64,6 +64,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-downgrade
     eos-dracut                              # was: dracut-hook/aur
     eos-hooks
+    eos-iso-hotfix
     eos-lightdm-gtk-theme
     eos-lightdm-slick-theme
     eos-log-tool
