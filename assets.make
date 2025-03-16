@@ -1335,6 +1335,16 @@ ShowResult() {
     fi
 }
 
+MovePackageAsLastToBuild() {
+    local -r pkgname="$1"
+    if [ "$(printf "%s\n" "${PKGNAMES[@]}" | grep "^$pkgname$")" ] ; then
+        local tmp=()
+        readarray -t tmp <<< $(printf "%s\n" "${PKGNAMES[@]}" | grep -v "^$pkgname$")
+        tmp+=("$pkgname")
+        PKGNAMES=("${tmp[@]}")
+    fi
+}
+
 Main2()
 {
     local -r RED=$'\e[0;91m'         # starts this foreground text color
@@ -1607,6 +1617,8 @@ Main2()
         # build if newer versions exist. When building, collect removables and builds.
 
         buildsavedir="$(mktemp -d "$HOME/.tmpdir.XXXXX")"
+
+        MovePackageAsLastToBuild calamares        # if calamares will be built, make it the last to build
 
         local built_under_this_pkgname
         # local remove_under_this_pkgname
