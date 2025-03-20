@@ -127,7 +127,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
 # Note: include the definition in quotes because of the pipe character '|'.
 #
 PKGNAMES_WAIT=(
-    'ckbcomp|1.233-1'     # in comparison to 1.228-1, this version has no changes to the 'ckbcomp' app
+    # 'ckbcomp|1.233-1'     # in comparison to 1.228-1, this version has no changes to the 'ckbcomp' app
 
     # filesystem
     # lsb-release
@@ -591,7 +591,8 @@ _ckbcomp_updatehook() {
         echo "info: fast update check failed"
         ret=3
     elif diff $tmpfile /bin/$pname >/dev/null ; then
-        echo "no real changes"
+	local ver=$(yay -Sia ckbcomp|grep ^Version|awk '{print $NF}')
+        echo "no real changes in $ver"
         ret=1
     fi
     rm -f $tmpfile
