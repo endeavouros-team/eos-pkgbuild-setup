@@ -95,6 +95,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     pahis
     paru/aur
     qemu-arm-aarch64-static-bin
+    rami
     rate-mirrors/aur
     reflector-bash-completion
     reflector-simple
@@ -592,7 +593,7 @@ _ckbcomp_updatehook() {
         ret=3
     elif diff $tmpfile /bin/$pname >/dev/null ; then
 	local ver=$(yay -Sia ckbcomp|grep ^Version|awk '{print $NF}')
-        echo "no real changes in $ver"
+        echo "equals $ver"
         ret=1
     fi
     rm -f $tmpfile
