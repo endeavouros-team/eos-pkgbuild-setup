@@ -1793,7 +1793,7 @@ Main2()
                 fi
 
                 # Put changed assets (built) to db.
-                repo-add "$ASSETSDIR/$REPONAME".db.tar.$REPO_COMPRESSOR "${built[@]}"
+                repo-add --include-sigs "$ASSETSDIR/$REPONAME".db.tar.$REPO_COMPRESSOR "${built[@]}"
             fi
         fi
 
