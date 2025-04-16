@@ -332,7 +332,7 @@ Build()
       case "$pkgs" in
           "" | "*.pkg.tar.$_COMPRESSOR") DIE "$pkgdirname: build failed" ;;
       esac
-      for pkg in $pkgs ; do
+      for pkg in "${pkgs[@]}" ; do
           # HandlePossibleEpoch "$Pkgname" "$pkg" pkg     # not needed here since makepkg should handle epoch OK (?)
           mv $pkg "$assetsdir"
           built+=("$assetsdir/$pkg")
