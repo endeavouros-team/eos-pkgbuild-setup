@@ -724,7 +724,17 @@ Assets_clone()
             Pushd $tmpdir
             git clone  "$GITREPOURL" >& /dev/null || DIE "cloning '$GITREPOURL' failed"
             rm -f "$ASSETSDIR"/*.{db,files,zst,xz,sig,txt,old}      # $asset_file_endings
-            cp "$GITREPODIR"/*.{db,files,zst,xz,sig} "$ASSETSDIR"   # $asset_file_endings
+            if true ; then
+                local srcfiles=()
+                readarray -t srcfiles <<< $(/bin/ls "$GITREPODIR"/*.{db,files,zst,xz,sig} 2>/dev/null)
+                if [ "$srcfiles" ] ; then
+                    cp "${srcfiles[@]}" "$ASSETSDIR"
+                else
+                    DIE "$FUNCNAME: no files in $GITREPODIR to copy to $ASSETSDIR!"
+                fi
+            else
+                cp "$GITREPODIR"/*.{db,files,zst,xz,sig} "$ASSETSDIR"   # $asset_file_endings
+            fi
             sync
             Popd
             rm -rf $tmpdir
