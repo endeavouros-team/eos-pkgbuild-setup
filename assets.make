@@ -1543,7 +1543,7 @@ Main2()
                 ret=$?
                 case "$ret" in
                     0) ;;    # there are changes, so carry on!
-                    1) ShowResult "$OK ($tmpcurr)" "$fastmsg" "$fastfunc" ; continue ;;
+                    1) ShowResult "OK ($tmpcurr)" "$fastmsg" "$fastfunc" ; continue ;;
                     2|3) ;;
                     *) echo2 "error: fast check hook returned $ret"; continue ;;
                 esac
