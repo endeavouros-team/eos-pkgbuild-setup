@@ -459,7 +459,7 @@ FetchAurPkgs() {
     if [ "${pkgs[0]}" ] ; then
         ShowPkgListWithTitle "==> From AUR:" "${pkgs[@]}"
         local -r url="https://aur.archlinux.org"
-        curl -Lsm 30 "$url" >/dev/null || DIE "sorry, $url is not currently available!"
+        curl -Lsm 10 "$url" >/dev/null || DIE "sorry, AUR ($url) is not currently available!"   # test AUR availability
         rm -rf "${pkgs[@]}"
         yay -Ga "${pkgs[@]}" >/dev/null || DIE "yay -Ga ${pkgs[*]} failed."
     fi
