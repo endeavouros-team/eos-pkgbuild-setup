@@ -49,11 +49,9 @@ local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 
 PKGNAMES=(                                        # Alphabetically ordered.
     akm
-    arc-gtk-theme-eos
-    bashdb/aur
+    # arc-gtk-theme-eos  # arc-gtk-theme moved to AUR !!
     calamares
     ckbcomp
-    downgrade/aur
     endeavouros-branding
     endeavouros-keyring
     endeavouros-konsole-colors
@@ -86,6 +84,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-settings-xfce4
     eos-translations
     eos-update-notifier
+    fetch-iso                               # should be in endeavouros-testing-dev?
     # filesystem
     kernel-install-for-dracut
     keyserver-rank                          # probably not needed?
@@ -93,17 +92,12 @@ PKGNAMES=(                                        # Alphabetically ordered.
     nvidia-hook
     nvidia-inst
     pahis
-    paru/aur
     qemu-arm-aarch64-static-bin
     rami
-    rate-mirrors/aur
     reflector-bash-completion
     reflector-simple
     welcome
     yad
-    yay/aur
-    zfs-dkms/aur
-    zfs-utils/aur
 
     # devel packages
     #eos-settings-budgie-devel
@@ -112,6 +106,20 @@ PKGNAMES=(                                        # Alphabetically ordered.
     #eos-settings-mate-devel
     #eos-settings-xfce4-devel
 )
+if wget --timeout 10 -qO /tmp/foobar https://aur.archlinux.org/packages ; then
+    PKGNAMES+=(
+        bashdb/aur
+        downgrade/aur
+        paru/aur
+        rate-mirrors/aur
+        yay/aur
+        zfs-dkms/aur
+        zfs-utils/aur
+    )
+else
+    echo "==> Warning: AUR packages are not available!" >&2
+fi
+sleep 2
 
 # PKGNAMES=( ckbcomp )
 
