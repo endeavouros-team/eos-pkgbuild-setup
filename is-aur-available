@@ -1,0 +1,42 @@
+#!/bin/bash
+
+Main() {
+    local progname=${0##*/}
+    local delay=0
+    local epochfile="$HOME/.cache/$progname.conf"
+    local status_prev_file="$HOME/.cache/$progname.status"
+    local status_prev="$(cat "$status_prev_file" 2>/dev/null)"
+    local sec_now="$(date +%s)"
+
+    [ "$status_prev" ] || DoIt
+
+    case "$1" in
+        --seconds=* | -s=*) delay=${1#*=} ;;
+        --minutes=* | -m=*) delay=${1#*=}; ((delay*=60)) ;;
+        --hours=*   | -h=*) delay=${1#*=}; ((delay*=3600)) ;;
+        --hour)             delay=3600 ;;
+    esac
+
+    if [ $delay -gt 0 ] ; then
+        local sec_old="$(cat "$epochfile" 2>/dev/null)"
+
+        if [ "$sec_old" ] ; then
+            [ $((sec_now - sec_old)) -lt $delay ] && return $status_prev
+        fi
+    fi
+    DoIt
+}
+
+DoIt() {
+    echo "$sec_now" > "$epochfile"
+    if wget --timeout 10 -qO /dev/null https://aur.archlinux.org/packages ; then
+        echo "0" > "$status_prev_file"
+        return 0
+    else
+        echo "1" > "$status_prev_file"
+        return 1
+    fi
+}
+
+Main "$@"
+
