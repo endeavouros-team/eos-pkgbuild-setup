@@ -1356,6 +1356,20 @@ MovePackageAsLastToBuild() {
     fi
 }
 
+assert_is_number_ge_0() {
+    [ "${1//[0-9]/}" ] && DIE "'$1' is not a non-negative number"
+}
+
+SetAurDelay() {
+    local val="$1"
+    case "$val" in
+        *h) aur_delay=${val:: -1} ; assert_is_number_ge_0 "$aur_delay" ; ((aur_delay*=3600)) ;;
+        *m) aur_delay=${val:: -1} ; assert_is_number_ge_0 "$aur_delay" ; ((aur_delay*=60)) ;;
+        *s) aur_delay=${val:: -1} ; assert_is_number_ge_0 "$aur_delay" ;;
+        *)  aur_delay=${val}      ; assert_is_number_ge_0 "$aur_delay" ;;
+    esac
+}
+
 Main2()
 {
     local -r RED=$'\e[0;91m'         # starts this foreground text color
@@ -1386,6 +1400,7 @@ Main2()
     local save_folder=""
     local PKGNAMES_PARAMETER=""
     local AUR_IS_AVAILABLE=yes       # to be used also in assets.conf files
+    local aur_delay=0
     local fetch_timeout=""
     local -r ask_timeout=60
 
@@ -1404,6 +1419,7 @@ Main2()
         for xx in "$@" ; do
             case "$xx" in
                 --no-aur)                  AUR_IS_AVAILABLE=no ;;
+                --aur-delay=*)             SetAurDelay "${xx#*=}" ;;    # * = <number>{s|m|h}
                 --dryrun-local | -nl | -n) cmd=dryrun-local ;;
                 --dryrun | -nr | -nn)      cmd=dryrun ;;
                 --repoup)                  repoup=1 ;;                  # sync repo even when no packages are built
@@ -1424,6 +1440,8 @@ Main2()
                         --pkgnames=
                         --pkgdiff
                         --repoup
+                        --no-aur
+                        --aur-delay=
                     )
                     echo "${all_options[*]}"
                     exit 0
@@ -1456,7 +1474,7 @@ Main2()
 
     if [ $AUR_IS_AVAILABLE = yes ] && grep -E "^[ ]+[^ ]+/aur$" $ASSETS_CONF >/dev/null ; then
         echo2 -n "==> Checking AUR availability: "
-        if is-aur-available ; then
+        if is-aur-available --seconds=$aur_delay ; then
             echo2 success
         else
             AUR_IS_AVAILABLE=no
