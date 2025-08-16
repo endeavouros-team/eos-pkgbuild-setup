@@ -32,12 +32,15 @@ local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 ## package name specifications
 local PKGNAMES=(                                    # actually: dir names for packages
 #    b43-firmware/aur
-    python3-gpg_batch_sign/aur
-    repo-add_and_sign/aur
-
     eos-pkgbuild-setup
-    calamares-git
+    # calamares-git
 )
+if false && [ $AUR_IS_AVAILABLE = yes ] ; then
+    PKGNAMES+=(
+	python3-gpg_batch_sign/aur
+	repo-add_and_sign/aur
+    )
+fi
 
 # PKGNAMES=(eos-pkgbuild-setup)
 

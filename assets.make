@@ -1294,6 +1294,7 @@ Options:
     --pkgnames="X"              X is a space separated list of packages to use instead of PKGNAMES array in assets.conf.
     --pkgdiff                   Show changelog for modified packages.
     --repoup                    (Advanced) Force update of repository database files.
+    --no-aur                    Dont't try to use packages from the AUR (sometimes it is unavailable).
 EOF
 #   --versuffix=X               Append given suffix (X) to pkgver of PKGBUILD.
 #   --mirrorcheck=X             X is the time (in seconds) to wait before starting the mirrorcheck.
@@ -1384,6 +1385,7 @@ Main2()
     local use_release_assets         # currently only for [endeavouros] repo
     local save_folder=""
     local PKGNAMES_PARAMETER=""
+    local AUR_IS_AVAILABLE=yes       # to be used also in assets.conf files
     local fetch_timeout=""
     local -r ask_timeout=60
 
@@ -1401,6 +1403,7 @@ Main2()
     if [ -n "$1" ] ; then
         for xx in "$@" ; do
             case "$xx" in
+                --no-aur)                  AUR_IS_AVAILABLE=no ;;
                 --dryrun-local | -nl | -n) cmd=dryrun-local ;;
                 --dryrun | -nr | -nn)      cmd=dryrun ;;
                 --repoup)                  repoup=1 ;;                  # sync repo even when no packages are built
@@ -1451,6 +1454,15 @@ Main2()
 
     declare -A ASSET_FAST_UPDATE_CHECKS=()
 
+    if [ $AUR_IS_AVAILABLE = yes ] && grep -E "^[ ]+[^ ]+/aur$" $ASSETS_CONF >/dev/null ; then
+        echo2 -n "==> Checking AUR availability: "
+        if is-aur-available ; then
+            echo2 success
+        else
+            AUR_IS_AVAILABLE=no
+            echo2 failure
+        fi
+    fi
     source $ASSETS_CONF                     # local variables (with CAPITAL letters)
 
     export PACKAGER="$_PACKAGER"

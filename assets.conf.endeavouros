@@ -52,6 +52,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     # arc-gtk-theme-eos  # arc-gtk-theme moved to AUR !!
     calamares
     ckbcomp
+    dracut                                  # added 15.8.2025 (version 108_eos-1)
     endeavouros-branding
     endeavouros-keyring
     endeavouros-konsole-colors
@@ -84,7 +85,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-settings-xfce4
     eos-translations
     eos-update-notifier
-    fetch-iso                               # should be in endeavouros-testing-dev?
+    fetch-iso
     # filesystem
     kernel-install-for-dracut
     keyserver-rank                          # probably not needed?
@@ -106,7 +107,8 @@ PKGNAMES=(                                        # Alphabetically ordered.
     #eos-settings-mate-devel
     #eos-settings-xfce4-devel
 )
-if wget --timeout 10 -qO /tmp/foobar https://aur.archlinux.org/packages ; then
+
+if [ $AUR_IS_AVAILABLE = yes ] ; then
     PKGNAMES+=(
         bashdb/aur
         downgrade/aur
@@ -116,10 +118,7 @@ if wget --timeout 10 -qO /tmp/foobar https://aur.archlinux.org/packages ; then
         zfs-dkms/aur
         zfs-utils/aur
     )
-else
-    echo "==> Warning: AUR packages are not available!" >&2
 fi
-sleep 2
 
 # PKGNAMES=( ckbcomp )
 
@@ -588,8 +587,12 @@ _diff_file_and_data() {
 _ckbcomp_updatehook() {
     local -r pname=ckbcomp
     if [ ! -x /bin/$pname ] ; then
-        echo "info: package $pname is not installed but needed by the fast update"
+        echo -n "[error: package $pname is not installed but needed by the fast update] " >&2
         return 2
+    fi
+    if [ $AUR_IS_AVAILABLE = no ] ; then
+	echo -n "[error: cannot reliably check $pname changes because of AUR problems] " >&2
+	return 3
     fi
 
     local url_pkgname="https://salsa.debian.org/installer-team/console-setup/raw/master/Keyboard/$pname"
@@ -597,11 +600,11 @@ _ckbcomp_updatehook() {
     local tmpfile=$(mktemp)
 
     if ! curl --fail -Lsm 30 -o$tmpfile "$url_pkgname" ; then
-        echo "info: fast update check failed"
+        echo "[error: fast update check failed]" >&2
         ret=3
     elif diff $tmpfile /bin/$pname >/dev/null ; then
 	local ver=$(yay -Sia ckbcomp|grep ^Version|awk '{print $NF}')
-        echo "equals $ver"
+        echo -n "[info: equals $ver] " >&2
         ret=1
     fi
     rm -f $tmpfile
