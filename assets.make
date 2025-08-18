@@ -458,8 +458,6 @@ FetchAurPkgs() {
     readarray -t pkgs <<< $(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
     if [ "${pkgs[0]}" ] ; then
         ShowPkgListWithTitle "==> From AUR:" "${pkgs[@]}"
-        local -r url="https://aur.archlinux.org"
-        curl -Lsm 10 "$url" >/dev/null || DIE "sorry, AUR ($url) is not currently available!"   # test AUR availability
         rm -rf "${pkgs[@]}"
         yay -Ga "${pkgs[@]}" >/dev/null || DIE "yay -Ga ${pkgs[*]} failed."
     fi
