@@ -1,0 +1,27 @@
+#!/bin/bash
+
+echo2() { echo -e "$@" >&2 ; }
+DIE()   { echo2 "$progname: error: $1"; Usage; exit 1; }
+WARN()  { echo2 "$progname: warning: $1"; }
+Usage() { echo2 "Usage: $progname names-of-AUR-packages"; }
+
+Main() {
+    local progname=${0##*/}
+    local pkg_names=("$@")
+    local pkg_name
+
+    if [ "$pkg_names" ] ; then
+           for pkg_name in "${pkg_names[@]}" ; do
+               if [ -d "$pkg_name" ] ; then
+                   WARN "$pkg_name folder already exists, skipping $pkg_name"
+               else
+                   git clone --branch "$pkg_name" --single-branch https://github.com/archlinux/aur.git "$pkg_name" &>/dev/null \
+                       || WARN "fetching $pkg_name failed, skipping $pkg_name"
+               fi
+           done
+    else
+        DIE "no AUR package name given"
+    fi
+}
+
+Main "$@"

@@ -457,9 +457,17 @@ FetchAurPkgs() {
     local pkgs
     readarray -t pkgs <<< $(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
     if [ "${pkgs[0]}" ] ; then
+        local cmd
         ShowPkgListWithTitle "==> From AUR:" "${pkgs[@]}"
         rm -rf "${pkgs[@]}"
-        yay -Ga "${pkgs[@]}" >/dev/null || DIE "yay -Ga ${pkgs[*]} failed."
+        if [ $AUR_IS_AVAILABLE = yes ] ; then
+            cmd="yay -Ga"
+            $cmd "${pkgs[@]}" >/dev/null && return
+        else
+            cmd=aur-pkgs-fetch
+            $cmd "${pkgs[@]}" && return
+        fi
+        DIE "$cmd ${pkgs[*]} failed."
     fi
 }
 
