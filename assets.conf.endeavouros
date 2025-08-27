@@ -107,18 +107,15 @@ PKGNAMES=(                                        # Alphabetically ordered.
     #eos-settings-mate-devel
     #eos-settings-xfce4-devel
 )
-
-if [ $AUR_IS_AVAILABLE = yes ] ; then
-    PKGNAMES+=(
-        bashdb/aur
-        downgrade/aur
-        paru/aur
-        rate-mirrors/aur
-        yay/aur
-        zfs-dkms/aur
-        zfs-utils/aur
-    )
-fi
+PKGNAMES+=(
+    bashdb/aur
+    downgrade/aur
+    paru/aur
+    rate-mirrors/aur
+    yay/aur
+    zfs-dkms/aur
+    zfs-utils/aur
+)
 
 # PKGNAMES=( ckbcomp )
 
@@ -590,10 +587,6 @@ _ckbcomp_updatehook() {
         echo -n "[error: package $pname is not installed but needed by the fast update] " >&2
         return 2
     fi
-    if [ $AUR_IS_AVAILABLE = no ] ; then
-	echo -n "[error: cannot reliably check $pname changes because of AUR problems] " >&2
-	return 3
-    fi
 
     local url_pkgname="https://salsa.debian.org/installer-team/console-setup/raw/master/Keyboard/$pname"
     local ret=0               # assume changes exist
@@ -603,7 +596,10 @@ _ckbcomp_updatehook() {
         echo "[error: fast update check failed]" >&2
         ret=3
     elif diff $tmpfile /bin/$pname >/dev/null ; then
-	local ver=$(yay -Sia ckbcomp|grep ^Version|awk '{print $NF}')
+	# local ver=$(yay -Sia ckbcomp|grep ^Version|awk '{print $NF}')
+	local Pkgbuild="$PKGBUILD_ROOTDIR"/$pname/PKGBUILD
+        local ver=$(grep ^pkgver= $Pkgbuild | cut -d'=' -f2)
+        ver+="-$(grep ^pkgrel= $Pkgbuild | cut -d'=' -f2)"
         echo -n "[info: equals $ver] " >&2
         ret=1
     fi

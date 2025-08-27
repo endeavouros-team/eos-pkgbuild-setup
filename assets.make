@@ -459,9 +459,8 @@ FetchAurPkgs() {
     if [ "${pkgs[0]}" ] ; then
         ShowPkgListWithTitle "==> From AUR:" "${pkgs[@]}"
         rm -rf "${pkgs[@]}"
-        if [ $AUR_IS_AVAILABLE = yes ] ; then
-            yay -Ga "${pkgs[@]}" >/dev/null && return
-        fi
+        yay -Ga "${pkgs[@]}" >/dev/null && return
+        sleep 1
         aur-pkgs-fetch "${pkgs[@]}" && return
         DIE "fetching ${pkgs[*]} failed."
     fi
@@ -1474,7 +1473,7 @@ Main2()
 
     declare -A ASSET_FAST_UPDATE_CHECKS=()
 
-    if [ $AUR_IS_AVAILABLE = yes ] && grep -E "^[ ]+[^ ]+/aur$" $ASSETS_CONF >/dev/null ; then
+    if false && [ $AUR_IS_AVAILABLE = yes ] && grep -E "^[ ]+[^ ]+/aur$" $ASSETS_CONF >/dev/null ; then
         echo2 -n "==> Checking AUR availability: "
         if is-aur-available --seconds=$aur_delay ; then
             echo2 success

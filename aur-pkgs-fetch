@@ -2,22 +2,36 @@
 
 echo2() { echo -e "$@" >&2 ; }
 DIE()   { echo2 "$progname: error: $1"; Usage; exit 1; }
-WARN()  { echo2 "$progname: warning: $1"; }
+WARN()  { echo2 "    -> $progname: warning: $1"; }
 Usage() { echo2 "Usage: $progname names-of-AUR-packages"; }
+
+HasUrl() {
+    local url="$1"
+    grep "url = $url" "$pkg_name/.git/config" &> /dev/null
+}
 
 Main() {
     local progname=${0##*/}
     local pkg_names=("$@")
     local pkg_name
+    local repourl=https://github.com/archlinux/aur.git
 
     if [ "$pkg_names" ] ; then
            for pkg_name in "${pkg_names[@]}" ; do
-               if [ -d "$pkg_name" ] ; then
-                   WARN "$pkg_name folder already exists, skipping $pkg_name"
-               else
-                   git clone --branch "$pkg_name" --single-branch https://github.com/archlinux/aur.git "$pkg_name" &>/dev/null \
-                       || WARN "fetching $pkg_name failed, skipping $pkg_name"
+               if [ -e "$pkg_name" ] ; then
+                   if HasUrl "$repourl" ; then
+                       pushd "./$pkg_name" >/dev/null
+                       git pull >/dev/null
+                       popd >/dev/null
+                   elif HasUrl "https://aur.archlinux.org/$pkg_name\.git" ; then
+                       :  # $pkg_name was fetched by yay/paru so do nothing here
+                   else
+                       WARN "$pkg_name file exists, skipping $pkg_name"
+                   fi
+                   continue
                fi
+               timeout 20 git clone --branch "$pkg_name" --single-branch $repourl "$pkg_name" &>/dev/null \
+                   || { WARN "fetching $pkg_name failed"; sleep 1; }
            done
     else
         DIE "no AUR package name given"
