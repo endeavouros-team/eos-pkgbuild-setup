@@ -1,0 +1,61 @@
+#!/bin/bash
+
+Fetch() {
+    local cmd=( /bin/curl -o "$target.gz" --remote-time -Lsm 30 "$url" )
+    [ -e "$target" ] && cmd+=(--time-cond "$target")
+
+    "${cmd[@]}" || exit $?
+
+    if [ -e "$target.gz" ] ; then
+        rm -f "${target}"
+        gunzip "$target.gz" >/dev/null || exit 1
+    fi
+}
+
+GetPkgVersion() {
+    local -r pkgname="$1"
+    jq < "$target" | grep -A1 "\"PackageBase\": \"$pkgname\"" | grep '"Version"' | awk '{print $NF}' | tr -d '",'
+}
+
+Help() {
+    cat <<EOF >&2
+Purpose: Fetch the latest AUR package info file.
+Usage:   $progname [options]
+Options: -f,   --fetch               Fetch the latest AUR info file if needed.
+         -i,   --show-target-info    Show details about the info file (to stderr).
+         -p,   --show-target-path    Show the path of the info file (to stdout).
+         -v=*, --pkg-version=*       Show the version if the given AUR package (to stdout).
+         -h,   --help                This help.
+EOF
+}
+
+Main() {
+    local -r progname=${0##*/}
+    local -r url="https://aur.archlinux.org/packages-meta-v1.json.gz"
+    local -r file="${url##*/}"
+    local -r target="$HOME/.cache/${file%.gz}"     # ~/.cache/packages-meta-v1.json
+    local show_target_path=no
+    local show_target_info=no
+    local fetch=no
+
+    while true ; do
+        case "$1" in
+            "") break ;;
+            -f | --fetch)            fetch=yes ;;
+            -i | --show-target-info) show_target_info=yes ;;
+            -p | --show-target-path) show_target_path=yes ;;
+            -v=* | --pkg-version=*)  GetPkgVersion "${1#*=}" ;;
+            -h | --help)             Help; exit 0 ;;
+        esac
+        shift
+    done
+    [ "$fetch" = yes ] && Fetch
+
+    [ $show_target_path = yes ] && echo "${target}"
+    [ $show_target_info = yes ] && ls -l "${target}" >&2
+
+    # Get version of a package:
+    # jq < $HOME/.cache/packages-meta-v1.json | grep -A1 '"PackageBase": "emacs-git"' | grep '"Version"' | awk '{print $NF}' | tr -d '",'
+}
+
+Main "$@"

@@ -459,8 +459,9 @@ FetchAurPkgs() {
     if [ "${pkgs[0]}" ] ; then
         ShowPkgListWithTitle "==> From AUR:" "${pkgs[@]}"
         rm -rf "${pkgs[@]}"
-        yay -Ga "${pkgs[@]}" >/dev/null && return
-        sleep 1
+        echo2 "  -> running yay -Ga"
+        yay -Ga "${pkgs[@]}" &>/dev/null && return
+        echo2 "  -> running aur-pkgs-fetch"
         aur-pkgs-fetch "${pkgs[@]}" && return
         DIE "fetching ${pkgs[*]} failed."
     fi
@@ -1502,6 +1503,8 @@ Main2()
     RationalityTests            # check validity of values in $ASSETS_CONF
 
     Constructor
+
+    # aur-fetch-pkg-info --fetch  # get metainfo of AUR packages
 
     RunPreHooks                 # may/should update local PKGBUILDs
     Assets_clone                # offer getting assets from github instead of using local ones
