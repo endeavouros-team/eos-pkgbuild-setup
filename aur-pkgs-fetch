@@ -4,35 +4,74 @@ echo2() { echo -e "$@" >&2 ; }
 DIE()   { echo2 "$progname: error: $1"; Usage; exit 1; }
 WARN()  { echo2 "    -> $progname: warning: $1"; }
 Usage() { echo2 "Usage: $progname names-of-AUR-packages"; }
+Verbose() { [ $verbose = yes ] && echo2 "$@" ; }
 
-HasUrl() {
-    local url="$1"
-    grep "url = $url" "$pkg_name/.git/config" &> /dev/null
+FromRepo() { local url="$1"; grep "url = $url" "$pkg_name/.git/config" &> /dev/null; }
+
+Default() {
+    local var="$1"
+    local val="$2"
+    [ "$var" = "$val" ] && echo " (default)"
 }
 
 Main() {
     local progname=${0##*/}
-    local pkg_names=("$@")
-    local pkg_name
-    local repourl=https://github.com/archlinux/aur.git
+    local verbose_def=no
+    local verbose=$verbose_def
+    local pkg_names=()
+
+    [ -w "$PWD" ] || DIE "cannot write to $PWD"
+
+    # Handle options and save package names
+    while true ; do
+        case "$1" in
+            # handle options
+            -h | --help)
+                cat <<EOF >&2
+Usage:   $progname [options] <aur-package-names>
+Options: -h, --help         This help.
+         -v, --verbose      Provide some progress output$(Default $verbose_def yes).
+         -q, --quiet        No progress output$(          Default $verbose_def no).
+EOF
+                exit 0
+                ;;
+            -v | --verbose) verbose=yes ;;
+            -q | --quiet)   verbose=no ;;
+            -*) ;;                            # ignore unknown options
+
+            "") break ;;                      # stop loop
+            *) pkg_names+=("$1") ;;           # save pkg names
+        esac
+        shift
+    done
 
     if [ "$pkg_names" ] ; then
-           for pkg_name in "${pkg_names[@]}" ; do
-               if [ -e "$pkg_name" ] ; then
-                   if HasUrl "$repourl" ; then
-                       pushd "./$pkg_name" >/dev/null
-                       git pull >/dev/null
-                       popd >/dev/null
-                   elif HasUrl "https://aur.archlinux.org/$pkg_name\.git" ; then
-                       :  # $pkg_name was fetched by yay/paru so do nothing here
-                   else
-                       WARN "$pkg_name file exists, skipping $pkg_name"
-                   fi
-                   continue
-               fi
-               timeout 20 git clone --branch "$pkg_name" --single-branch $repourl "$pkg_name" &>/dev/null \
-                   || { WARN "fetching $pkg_name failed"; sleep 1; }
-           done
+        local -r REPOURL=https://github.com/archlinux/aur.git
+        local -r AURURL=https://aur.archlinux.org
+        local pkg_name
+        for pkg_name in "${pkg_names[@]}" ; do
+            Verbose -n "  -> $pkg_name: "
+            if [ -e "$pkg_name" ] ; then
+                if FromRepo "$REPOURL" ; then
+                    Verbose -n "(git pull) "
+                    pushd "./$pkg_name" >/dev/null
+                    case "$verbose" in
+                        no)  git pull >/dev/null; echo2 "" ;;
+                        yes) git pull ;;
+                    esac
+                    popd >/dev/null
+                    continue
+                elif FromRepo "$AURURL/$pkg_name\.git" ; then
+                    rm -rf "$pkg_name"           # $pkg_name was fetched by yay/paru, replace it
+                else
+                    WARN "$pkg_name file exists, skipping $pkg_name"
+                    continue
+                fi
+            fi
+            Verbose "git clone"
+            timeout 20 git clone --branch "$pkg_name" --single-branch $REPOURL "$pkg_name" &>/dev/null \
+                || { WARN "fetching $pkg_name failed"; sleep 1; }
+        done
     else
         DIE "no AUR package name given"
     fi

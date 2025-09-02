@@ -454,15 +454,32 @@ ShowPkgListWithTitle() {   # Show lines like: $title name [name...]
 }
 
 FetchAurPkgs() {
+    DebugBreak
     local pkgs
     readarray -t pkgs <<< $(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
     if [ "${pkgs[0]}" ] ; then
-        ShowPkgListWithTitle "==> From AUR:" "${pkgs[@]}"
         rm -rf "${pkgs[@]}"
-        echo2 "  -> running yay -Ga"
-        yay -Ga "${pkgs[@]}" &>/dev/null && return
-        echo2 "  -> running aur-pkgs-fetch"
-        aur-pkgs-fetch "${pkgs[@]}" && return
+        case "$aur_src" in
+            aur)
+                echo2 "  -> yay -Ga ${pkgs[*]}"
+                yay -Ga "${pkgs[@]}" &>/dev/null && return
+                ;;
+            repo)
+                echo2 "  -> aur-pkgs-fetch ${pkgs[*]}"
+                aur-pkgs-fetch "${pkgs[@]}" && return
+                ;;
+            local)
+                echo2 "  -> copy from '$AURSRCDIR/$REPONAME'"
+                for pkg in "${pkgs[@]}" ; do
+                    if [ -d "$AURSRCDIR/$REPONAME/$pkg" ] ; then
+                        cp -r "$AURSRCDIR/$REPONAME/$pkg" ./
+                    else
+                        WARN "folder '$AURSRCDIR/$REPONAME/$pkg' is not found!"
+                    fi
+                done
+                return
+                ;;
+        esac
         DIE "fetching ${pkgs[*]} failed."
     fi
 }
@@ -1297,6 +1314,7 @@ Options:
     --pkgdiff                   Show changelog for modified packages.
     --repoup                    (Advanced) Force update of repository database files.
     --no-aur                    Dont't try to use packages from the AUR (sometimes it is unavailable).
+    --aursrc=X                  From where we fetch AUR packages, one of: aur (default), repo, local.
 EOF
 #   --versuffix=X               Append given suffix (X) to pkgver of PKGBUILD.
 #   --mirrorcheck=X             X is the time (in seconds) to wait before starting the mirrorcheck.
@@ -1402,6 +1420,7 @@ Main2()
     local save_folder=""
     local PKGNAMES_PARAMETER=""
     local AUR_IS_AVAILABLE=yes       # to be used also in assets.conf files
+    local aur_src=aur
     local aur_delay=0
     local fetch_timeout=""
     local -r ask_timeout=60
@@ -1416,11 +1435,14 @@ Main2()
         hook_no+=" "
     done
 
+    DebugBreak
+
     # Check given parameters:
     if [ -n "$1" ] ; then
         for xx in "$@" ; do
             case "$xx" in
                 --no-aur)                  AUR_IS_AVAILABLE=no ;;
+                --aursrc=*)                aur_src="${xx#*=}" ;;        # * = aur (default), repo, local.
                 --aur-delay=*)             SetAurDelay "${xx#*=}" ;;    # * = <number>{s|m|h}
                 --dryrun-local | -nl | -n) cmd=dryrun-local ;;
                 --dryrun | -nr | -nn)      cmd=dryrun ;;
