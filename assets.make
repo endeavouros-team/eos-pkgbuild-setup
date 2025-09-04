@@ -573,7 +573,7 @@ Compare() {
 }
 
 LogStuff() {
-    case "$cmd" in
+    case "$mode" in
         dryrun-local) return ;;  # avoid unnecessary pw asking
         # dryrun) return ;;  # avoid unnecessary pw asking
     esac
@@ -732,7 +732,7 @@ Assets_clone()
 {
     local names_from_git=no
 
-    if [ "$cmd" = "dryrun-local" ] && [ "$REPONAME" != "endeavouros_calamares" ] ; then
+    if [ "$mode" = "dryrun-local" ] && [ "$REPONAME" != "endeavouros_calamares" ] ; then
         return
     fi
     if [ "$use_release_assets" = "no" ] ; then
@@ -1405,7 +1405,7 @@ Main2()
     local buildStartTime
     local listing_updates=""
 
-    local cmd=""
+    local mode=""
     local xx yy zz
     local repoup=0
     local explain_hooks=no
@@ -1444,8 +1444,8 @@ Main2()
                 --no-aur)                  AUR_IS_AVAILABLE=no ;;
                 --aursrc=*)                aur_src="${xx#*=}" ;;        # * = aur (default), repo, local.
                 --aur-delay=*)             SetAurDelay "${xx#*=}" ;;    # * = <number>{s|m|h}
-                --dryrun-local | -nl | -n) cmd=dryrun-local ;;
-                --dryrun | -nr | -nn)      cmd=dryrun ;;
+                --dryrun-local | -nl | -n) mode=dryrun-local ;;
+                --dryrun | -nr | -nn)      mode=dryrun ;;
                 --repoup)                  repoup=1 ;;                  # sync repo even when no packages are built
                 --pkgdiff)                 pkgdiff=yes ;;
                 -e | --explain-hook-marks) explain_hooks=yes ;;
@@ -1671,7 +1671,7 @@ Main2()
         fi
     fi
 
-    case "$cmd" in
+    case "$mode" in
         dryrun | dryrun-local)
             Exit $((exit_code + 100))   # return 100 + number of items that need building
             ;;
