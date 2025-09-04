@@ -581,6 +581,13 @@ _diff_file_and_data() {
     meld "$file" "$datafile"
 }
 
+GetAurVersion() {
+    local helper=/bin/yay
+    [ -x $helper ] || helper=/bin/paru
+    [ -x $helper ] || return 1
+    LANG=C $helper -Sia "$1" | grep ^Version | awk '{print $NF}'
+}
+
 _ckbcomp_updatehook() {
     local -r pname=ckbcomp
     if [ ! -x /bin/$pname ] ; then
@@ -596,11 +603,11 @@ _ckbcomp_updatehook() {
         echo "[error: fast update check failed]" >&2
         ret=3
     elif diff $tmpfile /bin/$pname >/dev/null ; then
-	# local ver=$(yay -Sia ckbcomp|grep ^Version|awk '{print $NF}')
+	local aver=$(GetAurVersion $pname)
 	local Pkgbuild="$PKGBUILD_ROOTDIR"/$pname/PKGBUILD
         local ver=$(grep ^pkgver= $Pkgbuild | cut -d'=' -f2)
         ver+="-$(grep ^pkgrel= $Pkgbuild | cut -d'=' -f2)"
-        echo -n "[info: equals $ver] " >&2
+        echo -n "[info: $aver equals $ver] " >&2
         ret=1
     fi
     rm -f $tmpfile
