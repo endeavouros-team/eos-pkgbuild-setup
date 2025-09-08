@@ -2,8 +2,36 @@
 
 # TODO:
 #   - 2.12.2021:  update of multi-package PKGBUILD? Install should work, but deletion of old packages (thus updating) doesn't!
-#   - older: check if deletion of e.g. pamac-aur might remove also pamac-aur-git (names have same beginning)
-#   - better epoch handling
+#   - better epoch handling?
+
+
+RED=$'\e[1;91m'         # foreground text colors
+GREEN=$'\e[1;92m'
+YELLOW=$'\e[1;93m'
+BLUE=$'\e[1;94m'
+MAGENTA=$'\e[1;95m'
+CYAN=$'\e[1;96m'
+RESET=$'\e[0m'          # back to normal colors
+
+Color_common() {                 # handle "meta colors"
+    case "$color" in
+        "" | reset)    color="$RESET" ;;
+        error | fail)  color="$RED" ;;
+        info)          color="$YELLOW" ;;
+        warning)       color="$CYAN" ;;
+        tip | ok)      color="$GREEN" ;;
+    esac
+}
+Color2() {                       # Color to stderr
+    local color="$1"
+    Color_common
+    echo2 -n "$color"
+}
+Color1() {                       # Color to stdout
+    local color="$1"
+    Color_common
+    echo -n "$color"
+}
 
 echoreturn() { echo "$@" ; }     # for "return" values!
 
@@ -11,15 +39,18 @@ echo2()      { echo   "$@" >&2 ; }    # output to stderr
 printf2()    { printf "$@" >&2 ; }    # output to stderr
 
 DIE() {
+    Color2 error
     echo2 "Error: $@"
     echo2 "Call stack lines: ${BASH_LINENO[*]}"
     if [ "${FUNCNAME[1]}" = "Main" ] ; then
+        Color2 tip
         Usage
     fi
+    Color2
     Destructor
     exit 1
 }
-WARN()       { echo2 -n "Warning: " ; echo2 "$@" ; }
+WARN()       { Color2 warning; echo2 -n "Warning: " ; echo2 "$@" ; Color2; }
 
 FileSizePrint() {
     # Print size of file in bytes, numbers are is groups of three.
@@ -425,6 +456,7 @@ HookIndicator() {
 }
 
 ExplainHookMarks() {
+    Color2 tip
     printf2 "\nPossible markings above mean indications from %s:\n" "$ASSETS_CONF"
     printf2 "    %s = a package hook changed pkgver in PKGBUILD.\n" "$hook_pkgver"
     printf2 "    %s = execute pkgver() from PKGBUILD.\n" "$hook_pkgver_func"                             # not a hook!
@@ -432,6 +464,7 @@ ExplainHookMarks() {
     printf2 "    %s = a package hook was executed.\n" "$hook_yes"
     printf2 "    %s = compare new and existing PKGBUILD files from AUR.\n" "$hook_compare"
     printf2 "\n"
+    Color2
 }
 
 ShowPkgListWithTitle() {   # Show lines like: $title name [name...]
@@ -461,15 +494,15 @@ FetchAurPkgs() {
         rm -rf "${pkgs[@]}"
         case "$aur_src" in
             aur)
-                echo2 "  -> yay -Ga ${pkgs[*]}"
+                Color2 info; echo2 "  -> yay -Ga ${pkgs[*]}"; Color2
                 yay -Ga "${pkgs[@]}" &>/dev/null && return
                 ;;
             repo)
-                echo2 "  -> aur-pkgs-fetch ${pkgs[*]}"
+                Color2 info; echo2 "  -> aur-pkgs-fetch ${pkgs[*]}"; Color2
                 aur-pkgs-fetch "${pkgs[@]}" && return
                 ;;
             local)
-                echo2 "  -> copy from '$AURSRCDIR/$REPONAME'"
+                Color2 info; echo2 "  -> copy from '$AURSRCDIR/$REPONAME'"; Color2
                 for pkg in "${pkgs[@]}" ; do
                     if [ -d "$AURSRCDIR/$REPONAME/$pkg" ] ; then
                         cp -r "$AURSRCDIR/$REPONAME/$pkg" ./
@@ -559,10 +592,10 @@ Compare() {
         # Skip copying if package is marked as unacceptable, or user wants to skip.
 
         if [ "${SKIP_UNACCEPTABLE_PKGBUILD[$PKGNAME]}" ] ; then
-            echo2 "SKIP (unacceptable PKGBUILD)"
+            Color2 warning; echo2 "SKIP (unacceptable PKGBUILD)"; Color2
             return 1
         else
-            read -p "Continue $PROGNAME (Y/n): " >&2
+            Color2 info; read -p "Continue $PROGNAME (Y/n): " >&2; Color2
             case "$REPLY" in
                 [Nn]*) DIE "stopped due to the unacceptable PKGBUILD of $PKGNAME" ;;
             esac
@@ -579,7 +612,7 @@ LogStuff() {
     esac
     if which logstuff >& /dev/null ; then
         if ! logstuff state ; then
-            echo2 "==> logstuff on"
+            Color2 info; echo2 "==> logstuff on"; Color2
             logstuff on
         fi
     fi
@@ -1355,6 +1388,7 @@ ShowResult() {
     local -r verdict="$1"
     local -r hookout="$2"
     local -r fastfunc="$3"
+
     if [ -n "$hookout" ] ; then
         if [ "$fastfunc" ] ; then
             echo2 "$verdict  [$fastfunc: $hookout]"
@@ -1390,16 +1424,7 @@ SetAurDelay() {
     esac
 }
 
-Main2()
-{
-    local -r RED=$'\e[0;91m'         # starts this foreground text color
-    local -r GREEN=$'\e[0;92m'
-    local -r YELLOW=$'\e[0;93m'
-    local -r BLUE=$'\e[0;94m'
-    local -r MAGENTA=$'\e[0;95m'
-    local -r CYAN=$'\e[0;96m'
-    local -r RESET=$'\e[0m'          # back to normal colors
-
+Main2() {
     test -n "$PKGEXT" && unset PKGEXT   # don't use env vars!
 
     local buildStartTime
@@ -1555,10 +1580,10 @@ Main2()
     local items_waiting=0
     local no_pkgbuild_count=0
     local hookout=""
-    local -r WARNING="${RED}WARNING${RESET}"
-    local -r OK="${BLUE}OK${RESET}"
-    local -r WAITING="${CYAN}VERSION SKIP${RESET}"
-    local -r CHANGED="${YELLOW}CHANGED${RESET}"
+    local -r WARNING="$(Color1 warning)WARNING$(Color1)"
+    local -r OK="$(Color1 ok)OK$(Color1)"
+    local -r WAITING="${CYAN}VERSION SKIP$(Color1)"
+    local -r CHANGED="${YELLOW}CHANGED$(Color1)"
     local ret=""
     local fastmsg=""
     local fastfunc=""
@@ -1599,7 +1624,7 @@ Main2()
                 ret=$?
                 case "$ret" in
                     0) ;;    # there are changes, so carry on!
-                    1) ShowResult "OK ($tmpcurr)" "$fastmsg" "$fastfunc" ; continue ;;
+                    1) ShowResult "$OK ($tmpcurr)" "$fastmsg" "$fastfunc" ; continue ;;
                     2|3) ;;
                     *) echo2 "error: fast check hook returned $ret"; continue ;;
                 esac
@@ -1655,7 +1680,7 @@ Main2()
             color="${RED}"
         fi
 
-        printf2 "\nItems to build: %s%s/%s%s\n" "$color" "$total_items_to_build" "${#PKGNAMES[@]}" "${RESET}"
+        printf2 "\nItems to build: %s%s/%s%s\n" "$color" "$total_items_to_build" "${#PKGNAMES[@]}" "$(Color1)"
 
         if [ "$items_waiting" != "0" ] ; then
             printf2   "Items waiting:  %s\n" "$items_waiting"
