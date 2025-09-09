@@ -4,34 +4,10 @@
 #   - 2.12.2021:  update of multi-package PKGBUILD? Install should work, but deletion of old packages (thus updating) doesn't!
 #   - better epoch handling?
 
+source /etc/eos-color.conf
 
-RED=$'\e[1;91m'         # foreground text colors
-GREEN=$'\e[1;92m'
-YELLOW=$'\e[1;93m'
-BLUE=$'\e[1;94m'
-MAGENTA=$'\e[1;95m'
-CYAN=$'\e[1;96m'
-RESET=$'\e[0m'          # back to normal colors
-
-Color_common() {                 # handle "meta colors"
-    case "$color" in
-        "" | reset)    color="$RESET" ;;
-        error | fail)  color="$RED" ;;
-        info)          color="$YELLOW" ;;
-        warning)       color="$CYAN" ;;
-        tip | ok)      color="$GREEN" ;;
-    esac
-}
-Color2() {                       # Color to stderr
-    local color="$1"
-    Color_common
-    echo2 -n "$color"
-}
-Color1() {                       # Color to stdout
-    local color="$1"
-    Color_common
-    echo -n "$color"
-}
+Color2() { eos-color "$1" 2; }       # Color to stderr
+Color1() { eos-color "$1"; }         # Color to stdout
 
 echoreturn() { echo "$@" ; }     # for "return" values!
 
