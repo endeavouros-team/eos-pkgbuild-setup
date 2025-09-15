@@ -1558,8 +1558,9 @@ Main2() {
     local hookout=""
     local -r WARNING="$(Color1 warning)WARNING$(Color1)"
     local -r OK="$(Color1 ok)OK$(Color1)"
-    local -r WAITING="${CYAN}VERSION SKIP$(Color1)"
-    local -r CHANGED="${YELLOW}CHANGED$(Color1)"
+    local -r WAITING="$(Color1 info)UPDATE WAIT$(Color1)"
+    local -r IN_WAIT_LIST="$(Color1 info)also in wait list$(Color1)"
+    local -r CHANGED="$(Color1 warning)CHANGED$(Color1)"
     local ret=""
     local fastmsg=""
     local fastfunc=""
@@ -1618,7 +1619,7 @@ Main2() {
             if IsInWaitList "$xx" "$tmp" ; then
                 ((items_waiting++))
                 if [ "$tmpcurr" = "$tmp" ] ; then
-                    ShowResult "$OK ($tmpcurr) {in wait list}" "$hookout"
+                    ShowResult "$OK ($tmpcurr) [$IN_WAIT_LIST]" "$hookout"
                 else
                     ShowResult "$WAITING ($tmpcurr ==> $tmp)" "$hookout"
                 fi
