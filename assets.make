@@ -260,7 +260,7 @@ HandlePossibleEpoch() {
         if [ ! -r "$PKGBUILD_ROOTDIR/$Pkgname/PKGBUILD" ] ; then
             if IsAurPackage "$Pkgname" ; then
                 cd "$PKGBUILD_ROOTDIR"
-                yay -Ga "$Pkgname" >/dev/null || DIE "fetching PKGBUILD of '$Pkgname' failed."
+                $helper -Ga "$Pkgname" >/dev/null || DIE "fetching PKGBUILD of '$Pkgname' failed."
             else
                 DIE "sorry, getting PKGBUILD of '$Pkgname' not supported yet."
             fi
@@ -470,11 +470,12 @@ FetchAurPkgs() {
         rm -rf "${pkgs[@]}"
         case "$aur_src" in
             aur)
-                Color2 info; echo2 "  -> yay -Ga ${pkgs[*]}"; Color2
-                yay -Ga "${pkgs[@]}" &>/dev/null && return
+                Color2 info; echo2 "  -> $helper -Ga ${pkgs[*]}"; Color2
+                $helper -Ga "${pkgs[@]}" &>/dev/null && return
                 ;;
             repo)
                 Color2 info; echo2 "  -> aur-pkgs-fetch ${pkgs[*]}"; Color2
+                Color2 warning; echo2 "  -> please wait..."; Color2
                 aur-pkgs-fetch "${pkgs[@]}" && return
                 ;;
             local)
@@ -523,7 +524,7 @@ ListNameToPkgName()
     #     case "$run_hook" in
     #         yes)
     #             rm -rf "$Pkgname"
-    #             yay -Ga "$Pkgname" >/dev/null || DIE "'yay -Ga $Pkgname' failed."
+    #             $helper -Ga "$Pkgname" >/dev/null || DIE "'$helper -Ga $Pkgname' failed."
     #             # Compare "$Pkgname" "$Pkgname/PKGBUILD" || return 1
     #             ;;
     #     esac
@@ -1425,6 +1426,30 @@ Main2() {
     local aur_delay=0
     local fetch_timeout=""
     local -r ask_timeout=60
+    local helper=""
+    local -r config_file="/etc/eos-script-lib-yad.conf"
+
+    source "$config_file"
+
+    while true ; do
+        if [ -z "$EOS_AUR_HELPER" ] ; then
+            WARN "EOS_AUR_HELPER is empty in $config_file"
+        else
+            helper="$EOS_AUR_HELPER"
+            [ -x "/bin/$helper" ] && break
+        fi
+        if [ -z "$EOS_AUR_HELPER_OTHER" ] ; then
+            WARN "EOS_AUR_HELPER_OTHER is empty in $config_file"
+        else
+            helper="$EOS_AUR_HELPER_OTHER"
+            [ -x "/bin/$helper" ] && break
+        fi
+        break
+    done
+    if [ "$helper" ] && [ ! -x "/bin/$helper" ] ; then
+        WARN "AUR helper not installed? Check EOS_AUR_HELPER and EOS_AUR_HELPER_OTHER in $config_file"
+        helper="yay"
+    fi
 
     local -r hook_pkgver="#"
     local -r hook_pkgver_func="p"
