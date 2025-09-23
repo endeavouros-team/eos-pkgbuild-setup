@@ -1158,6 +1158,34 @@ Browser() {
     done
 }
 
+AskYesNo() {
+    local -n _answer="$1"      # return the result with this variable
+    local prompt="$2"          # the question without any tail like "(Y/n)? "
+    local -r default="$3"      # "yes" or "no"
+    local ask_timeout="$4"     # seconds; optional; default=30
+
+    case "$default" in
+        yes) prompt+=" (Y/n)? " ;;
+        no)  prompt+=" (y/N)? " ;;
+        *) _answer=no; return ;;       # usage error?
+    esac
+    [ "$ask_timeout" ] || ask_timeout=30
+
+    while true ; do
+        read2 -sn1 -p "$prompt" -t $ask_timeout
+        if [ $? -eq 0 ] ; then
+            case "$REPLY" in
+                [yY])    _answer=yes; return ;;
+                [nN]|"") _answer=no;  return ;;
+                *) ;;                            # wrong answer ==> ask again
+            esac
+        else
+            _answer=$default                     # timeout ==> return the default
+            return
+        fi
+    done
+}
+
 WantPkgDiffs() {
     local xx="$1"
     local pkgdirname="$2"
@@ -1169,14 +1197,9 @@ WantPkgDiffs() {
 
     if [ "$changelog_for_pkg" ] ; then
         if [ "$pkgdiff" = "unknown" ] ; then
-            pkgdiff=no
-            read2 -p "Updates and their changelogs are available. Want to see changelogs (Y/n)? " -t $ask_timeout
-            if [ $? -eq 0 ] ; then
-                case "$REPLY" in
-                    ""|[yY]*) pkgdiff=yes ;;
-                esac
-            fi
-            [ "$pkgdiff" = "no" ] && echo2 no.
+            local -r ask_timeout=20
+            AskYesNo pkgdiff "Want to see changelog(s)" no $ask_timeout
+            echo2 "$pkgdiff"
         fi
         if [ "$pkgdiff" = "yes" ] ; then
             local urls=()
@@ -1425,7 +1448,6 @@ Main2() {
     local aur_src=aur
     local aur_delay=0
     local fetch_timeout=""
-    local -r ask_timeout=60
     local helper=""
     local -r config_file="/etc/eos-script-lib-yad.conf"
 
