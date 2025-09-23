@@ -1172,7 +1172,9 @@ AskYesNo() {
     [ "$ask_timeout" ] || ask_timeout=30
 
     while true ; do
+        eos-color warning 2                      # TODO: better "note" than "warning"
         read2 -sn1 -p "$prompt" -t $ask_timeout
+        eos-color reset 2
         if [ $? -eq 0 ] ; then
             case "$REPLY" in
                 [yY])    _answer=yes; return ;;
