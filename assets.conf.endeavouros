@@ -69,6 +69,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-lightdm-slick-theme
     eos-log-tool
     eos-lxdm-gtk3
+    eos-manual-intervention
     eos-packagelist
     eos-qogir-icons
     eos-quickstart
@@ -582,10 +583,28 @@ _diff_file_and_data() {
 }
 
 GetAurVersion() {
-    local helper=/bin/yay
-    [ -x $helper ] || helper=/bin/paru
-    [ -x $helper ] || return 1
-    LANG=C $helper -Sia "$1" | grep ^Version | awk '{print $NF}'
+    local pname="$1"
+
+    # echo2 -n "[$FUNCNAME: $aur_src] "
+
+    case "$aur_src" in
+	aur)
+	    local helper=/bin/yay
+	    [ -x $helper ] || helper=/bin/paru
+	    [ -x $helper ] || return 1
+	    LANG=C $helper -Sia "$pname" | grep ^Version | awk '{print $NF}'
+	    ;;
+	local | *)
+	    local Pkgbuild="$AURSRCDIR/$REPONAME/$pname/PKGBUILD"
+	    if [ -e "$Pkgbuild" ] ; then
+		source "$Pkgbuild"
+		echo -n "$pkgver"-"$pkgrel"
+	    else
+		WARN "file '$Pkgbuild' not found!"
+		return 1
+	    fi
+	    ;;
+    esac
 }
 
 _ckbcomp_updatehook() {
