@@ -479,7 +479,7 @@ FetchAurPkgs() {
                 aur-pkgs-fetch "${pkgs[@]}" && return
                 ;;
             local)
-                Color2 info; echo2 "  -> copy from '$AURSRCDIR/$REPONAME'"; Color2
+                Color2 info; echo2 "  -> copy from '${AURSRCDIR/$HOME/\~}/$REPONAME'"; Color2
                 for pkg in "${pkgs[@]}" ; do
                     if [ -d "$AURSRCDIR/$REPONAME/$pkg" ] ; then
                         cp -r "$AURSRCDIR/$REPONAME/$pkg" ./
