@@ -8,6 +8,7 @@ source /etc/eos-color.conf
 
 Color2() { eos-color "$1" 2; }       # Color to stderr
 Color1() { eos-color "$1"; }         # Color to stdout
+# echo2info() { Color2 info; echo2 "==>" "$@"; Color2 reset; }
 
 echoreturn() { echo "$@" ; }     # for "return" values!
 
@@ -462,12 +463,20 @@ ShowPkgListWithTitle() {   # Show lines like: $title name [name...]
     [ "$line" ] && printf2 "%s\n" "$line"
 }
 
+AurSource() {
+    # Use AUR if possible, otherwise use the backup repo at github.
+    local -n _refvar="$1"
+    local url=https://aur.archlinux.org/packages
+
+    /bin/curl --fail -Lsm 5 $url >/dev/null && _refvar=aur || _refvar=repo
+}
 FetchAurPkgs() {
     DebugBreak
     local pkgs
     readarray -t pkgs <<< $(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
     if [ "${pkgs[0]}" ] ; then
         rm -rf "${pkgs[@]}"
+        AurSource aur_src
         case "$aur_src" in
             aur)
                 Color2 info; echo2 "  -> $helper -Ga ${pkgs[*]}"; Color2
