@@ -192,7 +192,7 @@ GetArmCommitMessage() {
         # Show actual committed packages from the github ARM page.
         local commit=$(echo "$data" | grep -w "open markdown-title" | head -n1 | sed -e 's|.*/repo/commit/\(.*\)">.*|\1|')
         data=$(curl -Lsm 10 -o- "https://github.com/endeavouros-arm/repo/commit/$commit")
-        readarray -t data <<< $(echo "$data" | grep "pkg.tar.zst<" | grep -w "a href" | sed 's|.*>endeavouros/\(.*\)</a>|\1|')
+        readarray -t data < <(echo "$data" | grep "pkg.tar.zst<" | grep -w "a href" | sed 's|.*>endeavouros/\(.*\)</a>|\1|')
         commit_msg="Updated"
         for ((ix=1; ix < ${#data[@]}; ix=ix+2)) ; do
             commit_msg+=" ${data[ix]}"

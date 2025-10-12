@@ -34,7 +34,7 @@ Tag() {
     echo "Making sure we can reach the tags."
     logstuff on
 
-    readarray -t available_tags <<< $(hub release)
+    readarray -t available_tags < <(hub release)
     
     for known_tag in "${available_tags[@]}" ; do
         [ "$tag" = "$known_tag" ] && break

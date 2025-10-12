@@ -473,7 +473,7 @@ AurSource() {
 FetchAurPkgs() {
     DebugBreak
     local pkgs
-    readarray -t pkgs <<< $(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
+    readarray -t pkgs < <(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
     if [ "${pkgs[0]}" ] ; then
         rm -rf "${pkgs[@]}"
         AurSource aur_src
@@ -725,8 +725,8 @@ OnlyEpochDiffs() {
 
     [ "$count_ll" != "$count_rr" ] && return 1
 
-    readarray -t loc <<< $(echo "$local_files")
-    readarray -t rem <<< $(echo "$remote_files")
+    readarray -t loc < <(echo "$local_files")
+    readarray -t rem < <(echo "$remote_files")
 
     # epoch test: change first colon in local to dot and compare to remote
 
@@ -764,7 +764,7 @@ Assets_clone()
             rm -f "$ASSETSDIR"/*.{db,files,zst,xz,sig,txt,old}      # $asset_file_endings
             if true ; then
                 local srcfiles=()
-                readarray -t srcfiles <<< $(/bin/ls "$GITREPODIR"/*.{db,files,zst,xz,sig} 2>/dev/null)
+                readarray -t srcfiles < <(/bin/ls "$GITREPODIR"/*.{db,files,zst,xz,sig} 2>/dev/null)
                 if [ "$srcfiles" ] ; then
                     cp "${srcfiles[@]}" "$ASSETSDIR"
                 else
@@ -1214,7 +1214,7 @@ WantPkgDiffs() {
         fi
         if [ "$pkgdiff" = "yes" ] ; then
             local urls=()
-            readarray -t urls <<< $(echo "${changelog_for_pkg//|/$'\n'}")
+            readarray -t urls < <(echo "${changelog_for_pkg//|/$'\n'}")
             PKG_DIFFS+=("${urls[@]}")
         fi
     fi
@@ -1415,7 +1415,7 @@ MovePackageAsLastToBuild() {
     local -r pkgname="$1"
     if [ "$(printf "%s\n" "${PKGNAMES[@]}" | grep "^$pkgname$")" ] ; then
         local tmp=()
-        readarray -t tmp <<< $(printf "%s\n" "${PKGNAMES[@]}" | grep -v "^$pkgname$")
+        readarray -t tmp < <(printf "%s\n" "${PKGNAMES[@]}" | grep -v "^$pkgname$")
         tmp+=("$pkgname")
         PKGNAMES=("${tmp[@]}")
     fi
