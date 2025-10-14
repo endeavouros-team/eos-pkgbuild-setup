@@ -1374,13 +1374,27 @@ IsInWaitList() {
     if [ -n "$PKGNAMES_WAIT" ] ; then
         for xx in "${PKGNAMES_WAIT[@]}" ; do
             case "$xx" in
-                "$pkg")              # old syntax - pkgname - still supported currently, may be deprecated later
+                "$pkg")
+                    # old syntax - pkgname - still supported currently, may be deprecated later
                     return 0
                     ;;
-                "$pkg|"*)            # new syntax - pkgname|version-to-skip
+                "$pkg|"*)
+                    # New syntax: pkgname|version-to-skip[*]
+                    # Note: skip_version may end with a '*' to match any tail, then e.g.
+                    #     skip_version: v14.1.r*
+                    #     newver:       v14.1.r13.gc504674-1
+                    # match.
                     [ -n "$newver" ] || newver="$(PkgBuildVersion "$PKGBUILD_ROOTDIR/$pkgdirname")"
                     local skip_version="${xx#*|}"
-                    [ "$skip_version" = "$newver" ] && return 0
+                    if [ "${skip_version: -1}" = "*" ] ; then
+                        # skip_version ends with a '*'
+                        case "$newver" in
+                            "${skip_version:: -1}"*) return 0 ;;
+                        esac
+                    else
+                        [ "$skip_version" = "$newver" ] && return 0
+                    fi
+                    return 1    # $pkg handled, no match
                     ;;
             esac
         done
