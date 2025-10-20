@@ -256,14 +256,18 @@ _rate-mirrors_hook() {
 
 _dracut_hook() {
     # Inform if the Arch version if not older than the EndeavourOS version
-    local PKGBUILD="$PKGBUILD_ROOTDIR"/"$(__generic_get_pkgname $FUNCNAME)"/PKGBUILD
+    local pkg=$(__generic_get_pkgname $FUNCNAME)
+    local PKGBUILD="$PKGBUILD_ROOTDIR/$pkg/PKGBUILD"
     local eos_pkgver=""
     local eos_pkgrel=""
     GetPkgbuildValue "$PKGBUILD" eos_pkgver "pkgver" eos_pkgrel "pkgrel"
-    local extra_ver=$(expac -S %v extra/dracut)
+    local extra_ver=$(expac -S %v extra/$pkg)
+    local eos_ver=${eos_pkgver}-$eos_pkgrel
 
-    if [ $(vercmp $extra_ver ${eos_pkgver}-$eos_pkgrel) -ge 0 ] ; then
-        printf "$FUNCNAME: dracut: Arch version is not older than EndeavourOS ==> skip the EndeavourOS version. " >&2
+    if [ $(vercmp $extra_ver $eos_ver) -ge 0 ] ; then
+	Color2 info
+        echo2 -n "[info: $FUNCNAME: extra/$pkg $extra_ver > endeavouros/$eos_ver] "
+	Color2 reset
     fi
 }
 
@@ -610,7 +614,7 @@ GetAurVersion() {
 _ckbcomp_updatehook() {
     local -r pname=ckbcomp
     if [ ! -x /bin/$pname ] ; then
-        echo -n "[error: package $pname is not installed but needed by the fast update] " >&2
+        echo2 -n "[error: package $pname is not installed but needed by the fast update] "
         return 2
     fi
 
@@ -619,14 +623,16 @@ _ckbcomp_updatehook() {
     local tmpfile=$(mktemp)
 
     if ! curl --fail -Lsm 30 -o$tmpfile "$url_pkgname" ; then
-        echo "[error: fast update check failed]" >&2
+        echo2 "[error: fast update check failed]"
         ret=3
     elif diff $tmpfile /bin/$pname >/dev/null ; then
 	local aver=$(GetAurVersion $pname)
 	local Pkgbuild="$PKGBUILD_ROOTDIR"/$pname/PKGBUILD
         local ver=$(grep ^pkgver= $Pkgbuild | cut -d'=' -f2)
         ver+="-$(grep ^pkgrel= $Pkgbuild | cut -d'=' -f2)"
-        echo -n "[info: $aver equals $ver] " >&2
+	Color2 info
+        echo2 -n "[info: $FUNCNAME: $aver equals $ver] "
+	Color2 reset
         ret=1
     fi
     rm -f $tmpfile
@@ -654,7 +660,7 @@ declare -A ASSET_PACKAGE_HOOKS=(
     # bashdb                 _bashdb_hook                                    # no more needed
     # budgie-control-center  _budgie-control-center_hook
     # downgrade              _downgrade_hook_check_latest
-    # dracut                 _dracut_hook                                    # Inform if the Arch version if not older than the EndeavourOS version
+    dracut                 _dracut_hook                                    # Inform if the Arch version if not older than the EndeavourOS version
     # eos-lightdm-gtk-theme  _eos-lightdm-gtk-theme_hook                     # Clone package source of eos-lightdm-gtk-theme from EndeavourOS ARM
     # inxi                   _inxi_hook_check_latest
     # kalu                   _kalu_hook_fix_files
