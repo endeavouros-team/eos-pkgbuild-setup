@@ -127,9 +127,12 @@ PKGNAMES+=(
 # Formats supported:
 #   'package-name'                  skips all versions of 'package-name'
 #   'package-name|pkgver-pkgrel'    skips a specific version of 'package-name'
+#   'package-name|version-head*'    trailing '*' matches any tail in version when skipping versions of 'package-name'
+# See also: assets.make, IsInWaitList()
 # Examples:
 #   'eos-lxdm-gtk3'
 #   'eos-lxdm-gtk3|0.5.3-5'
+#   'eos-lxdm-gtk3|0.5.*'
 # Note: include the definition in quotes because of the pipe character '|'.
 #
 PKGNAMES_WAIT=(
