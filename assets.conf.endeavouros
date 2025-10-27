@@ -634,7 +634,7 @@ _ckbcomp_updatehook() {
         local ver=$(grep ^pkgver= $Pkgbuild | cut -d'=' -f2)
         ver+="-$(grep ^pkgrel= $Pkgbuild | cut -d'=' -f2)"
 	Color2 info
-        echo2 -n "[info: $FUNCNAME: $aver equals $ver] "
+        echo -n "info: $aver equals $ver"
 	Color2 reset
         ret=1
     fi
