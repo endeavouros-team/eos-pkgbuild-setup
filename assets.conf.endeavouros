@@ -492,12 +492,6 @@ _kalu_hook_fix_files() {
         -e 's|chown 0:102|chown root:polkitd|' \
         -e 's|^\(pkgrel=[0-9]*\)$|\1.1|'
 }
-_yad_hook_add_gspell() {
-    # add gspell to 'depends', and modify 'pkgrel'
-    sed -i "$PKGBUILD_ROOTDIR"/yad/PKGBUILD \
-        -e 's|^depends=(\([^\)]*\))$|depends=(\1 gspell)|' \
-        -e 's|^\(pkgrel=[0-9]*\)$|\1.1|'
-}
 
 
 
@@ -544,8 +538,19 @@ _helper_eos_branding_and_marking() {
     updpkgsums PKGBUILD >& /dev/null
 }
 
-
 _yad_hook() {
+    local -r url=https://gitlab.archlinux.org/archlinux/packaging/packages
+    local -r delay=1
+
+    if wget --timeout $delay -qO /dev/null $url ; then
+        return 0
+    else
+        WARN "cannot fetch yad PKGBUILD!"
+        return 1
+    fi
+}
+
+_yad_hook__old() {
 
     return    # 2023-Mar-08: currently not used!
 
@@ -576,6 +581,13 @@ _yad_hook() {
     _helper_eos_branding_and_marking
 
     popd >/dev/null
+}
+
+_yad_hook_add_gspell() {
+    # add gspell to 'depends', and modify 'pkgrel'
+    sed -i "$PKGBUILD_ROOTDIR"/yad/PKGBUILD \
+        -e 's|^depends=(\([^\)]*\))$|depends=(\1 gspell)|' \
+        -e 's|^\(pkgrel=[0-9]*\)$|\1.1|'
 }
 
 _diff_file_and_data() {
@@ -659,11 +671,12 @@ ASSET_FAST_UPDATE_CHECKS=(
 
 declare -A ASSET_PACKAGE_HOOKS=(
     assets_mirrors         _assets_download_break                            # special hook
+    dracut                 _dracut_hook                                      # Inform if the Arch version if not older than the EndeavourOS version
+    yad                    _yad_hook
 
     # bashdb                 _bashdb_hook                                    # no more needed
     # budgie-control-center  _budgie-control-center_hook
     # downgrade              _downgrade_hook_check_latest
-    dracut                 _dracut_hook                                    # Inform if the Arch version if not older than the EndeavourOS version
     # eos-lightdm-gtk-theme  _eos-lightdm-gtk-theme_hook                     # Clone package source of eos-lightdm-gtk-theme from EndeavourOS ARM
     # inxi                   _inxi_hook_check_latest
     # kalu                   _kalu_hook_fix_files
@@ -671,6 +684,5 @@ declare -A ASSET_PACKAGE_HOOKS=(
     # paper-icon-theme-git   _paper-icon-theme-git_hook
     # paru                   _paru_hook
     # rate-mirrors           _rate-mirrors_hook
-    # yad                    _yad_hook_add_gspell
     # yay                    _yay_hook_check_latest
 )

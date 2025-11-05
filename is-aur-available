@@ -29,7 +29,7 @@ Main() {
 
 DoIt() {
     echo "$sec_now" > "$epochfile"
-    if wget --timeout 10 -qO /dev/null https://aur.archlinux.org/packages ; then
+    if wget --timeout $delay -qO /dev/null https://aur.archlinux.org/packages ; then
         echo "0" > "$status_prev_file"
         return 0
     else

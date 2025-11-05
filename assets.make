@@ -522,6 +522,7 @@ ListNameToPkgName()
     local run_hook="$2"
     local Pkgname
     local hook
+    local hookretval=0
 
     hookout=""
 
@@ -543,8 +544,8 @@ ListNameToPkgName()
     hook="${ASSET_PACKAGE_HOOKS[$Pkgname]}"
     if [ -n "$hook" ] ; then
         if [ "$run_hook" = "yes" ] ; then
-            hookout=$($hook)
-            case $? in
+            hookout=$($hook) || hookretval=$?
+            case $hookretval in
                 0) HookIndicator "$hook_yes" ;;          # OK
                 11) HookIndicator "$hook_pkgver" ;;      # pkgver was updated by hook
                 1) HookIndicator "?" ;;                  # failed
@@ -556,6 +557,7 @@ ListNameToPkgName()
     fi
 
     pkgdirname="$Pkgname"
+    return $hookretval
 }
 
 Compare() {
