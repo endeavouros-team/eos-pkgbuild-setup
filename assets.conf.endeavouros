@@ -74,6 +74,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-qogir-icons
     eos-quickstart
     eos-rankmirrors
+    eos-reboot-recommended
     eos-sddm-theme
     eos-settings-budgie
     eos-settings-cinnamon
@@ -85,6 +86,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-settings-plasma
     eos-settings-xfce4
     eos-translations
+    eos-update
     eos-update-notifier
     fetch-iso
     # filesystem
@@ -99,7 +101,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     reflector-bash-completion
     reflector-simple
     welcome
-    yad
+    # yad                                   # patch no more needed?
 
     # devel packages
     #eos-settings-budgie-devel
@@ -136,12 +138,16 @@ PKGNAMES+=(
 # Note: include the definition in quotes because of the pipe character '|'.
 #
 PKGNAMES_WAIT=(
+    # Waiting for Ganymede release:
+    # 'eos-breeze-sddm'
+    # 'eos-settings-plasma'
+    # 'endeavouros-branding'
+
     # 'ckbcomp|1.233-1'     # in comparison to 1.228-1, this version has no changes to the 'ckbcomp' app
 
     # filesystem
     # lsb-release
 )
-# PKGNAMES_WAIT+=( endeavouros-theming )    # wait for the release
 
 
 
