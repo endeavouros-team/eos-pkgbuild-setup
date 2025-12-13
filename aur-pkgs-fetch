@@ -1,22 +1,25 @@
 #!/bin/bash
 
+# Download AUR packages from the experimental AUR github repo
+# and store them under the current folder.
+
 echo2() { echo -e "$@" >&2 ; }
 DIE()   { echo2 "$progname: error: $1"; Usage; exit 1; }
 WARN()  { echo2 "    -> $progname: warning: $1"; }
 Usage() { echo2 "Usage: $progname names-of-AUR-packages"; }
 Verbose() { [ $verbose = yes ] && echo2 "$@" ; }
 
-FromRepo() { local url="$1"; grep "url = $url" "$pkg_name/.git/config" &> /dev/null; }
+FromRepo() { local -r url="$1"; grep "url = $url" "$pkg_name/.git/config" &> /dev/null; }
 
 Default() {
-    local var="$1"
-    local val="$2"
+    local -r var="$1"
+    local -r val="$2"
     [ "$var" = "$val" ] && echo " (default)"
 }
 
 Main() {
-    local progname=${0##*/}
-    local verbose_def=no
+    local -r progname=${0##*/}
+    local -r verbose_def=no
     local verbose=$verbose_def
     local pkg_names=()
 
@@ -50,15 +53,12 @@ EOF
         local -r AURURL=https://aur.archlinux.org
         local pkg_name
         for pkg_name in "${pkg_names[@]}" ; do
-            Verbose -n "  -> $pkg_name: "
+            echo -n "    $pkg_name:|"
             if [ -e "$pkg_name" ] ; then
                 if FromRepo "$REPOURL" ; then
-                    Verbose -n "(git pull) "
+                    echo -n "(git pull)|"
                     pushd "./$pkg_name" >/dev/null
-                    case "$verbose" in
-                        no)  git pull >/dev/null; echo2 "" ;;
-                        yes) git pull ;;
-                    esac
+                    git pull
                     popd >/dev/null
                     continue
                 elif FromRepo "$AURURL/$pkg_name\.git" ; then
@@ -68,10 +68,10 @@ EOF
                     continue
                 fi
             fi
-            Verbose "git clone"
+            echo "(git clone)|"
             timeout 20 git clone --branch "$pkg_name" --single-branch $REPOURL "$pkg_name" &>/dev/null \
                 || { WARN "fetching $pkg_name failed"; sleep 1; }
-        done
+        done | column -t -s'|'
     else
         DIE "no AUR package name given"
     fi
