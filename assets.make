@@ -466,6 +466,7 @@ ShowPkgListWithTitle() {   # Show lines like: $title name [name...]
 AurSource() {
     # Use AUR if possible, otherwise use the backup repo at github.
     local -n _refvar="$1"
+    [ "$_refvar" != aur ] && return
     local url=https://aur.archlinux.org/packages
 
     /bin/curl --fail -Lsm 5 $url >/dev/null && _refvar=aur || _refvar=repo
