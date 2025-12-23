@@ -301,6 +301,10 @@ _paru_hook() {
                  -e "s|^depends=.*|depends=(git pacman 'libalpm.so=15')|" \
                  -e "s|^sha256sums=.*|sha256sums=('b1385075347c3ec2c4dda8055fd74cb9106ea5e2ee92d76a56a9c7707932221f')|"
              ;;
+	 2.1.0-2)
+             sed -i "$PKGBUILD" \
+                 -e 's|^pkgrel=2|pkgrel=2.1|'
+	     ;;
     esac
 }
 
@@ -688,7 +692,7 @@ declare -A ASSET_PACKAGE_HOOKS=(
     # kalu                   _kalu_hook_fix_files
     # nvidia-installer-db    _nvidia-installer-db_hook
     # paper-icon-theme-git   _paper-icon-theme-git_hook
-    # paru                   _paru_hook
+    paru                   _paru_hook
     # rate-mirrors           _rate-mirrors_hook
-    # yay                    _yay_hook_check_latest
+    # yay                    _yay_hook
 )
