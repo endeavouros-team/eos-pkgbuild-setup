@@ -1530,22 +1530,7 @@ Main2() {
                 --pkgnames=*)              PKGNAMES_PARAMETER="$xx" ;;
                 --fetch-timeout=* | -T=*)  fetch_timeout="${xx#*=}" ;;
 
-                --dump-options)
-                    local all_options=(
-                        --allow-downgrade
-                        --dryrun-local
-                        --dryrun
-                        --explain-hook-marks
-                        --fetch-timeout=
-                        --pkgnames=
-                        --pkgdiff
-                        --repoup
-                        --no-aur
-                        --aur-delay=
-                    )
-                    echo "${all_options[*]}"
-                    exit 0
-                    ;;
+                --dump-options) ;;
 
                 # currently not used!
                 --mirrorcheck=*)           mirror_check_wait="${xx#*=}";;
@@ -2219,6 +2204,24 @@ Main() {
     local -r ARCH=x86_64
     local -r _first_arg="$1"
     local fail=0
+
+    if [[ "$*" =~ "--dump-options" ]] ; then
+        local all_options=(
+            --allow-downgrade
+            --dryrun-local
+            --dryrun
+            --explain-hook-marks
+            --fetch-timeout=
+            --pkgnames=
+            --pkgdiff
+            --repoup
+            --no-aur
+            --aursrc=
+            --aur-delay=
+        )
+        echo "${all_options[*]}"
+        exit 0
+    fi
 
     case "$_first_arg" in
         --dir=*)             # user wants to change to the given folder
