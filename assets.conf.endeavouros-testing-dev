@@ -34,7 +34,16 @@ local PKGNAMES=(                                    # actually: dir names for pa
 #    b43-firmware/aur
     eos-pkgbuild-setup
     # calamares-git
+
+    ####################################################################################################
+    ###################################### For old Nvidia GPUs: ########################################
+    ####################################################################################################
+    # Older than Turing:
+    lib32-nvidia-580xx-utils/aur
+    nvidia-580xx-utils/aur
+    nvidia-580xx-settings/aur
 )
+
 if false && [ $AUR_IS_AVAILABLE = yes ] ; then
     PKGNAMES+=(
 	python3-gpg_batch_sign/aur
