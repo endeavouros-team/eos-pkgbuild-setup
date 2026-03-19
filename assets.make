@@ -317,11 +317,11 @@ Build()
       # now build, assume we have PKGBUILD
       # special handling for missing dependencies
       local exitcode=0
-      LANG=C makepkg --clean $opts 2>/dev/null >"$log" || {
+      LANG=C makepkg --clean $opts  &> "$log" || {
           exitcode=$?
           if [ -z "$(grep "$missdeps:" "$log")" ] ; then
               Popd -c2
-              DIE "makepkg for '$Pkgname' failed (makepkg code=$exitcode, missing deps, see $log and files at $workdir/$pkgdirname)"
+              DIE "makepkg for '$Pkgname' failed (makepkg: see $log and files at $workdir/$pkgdirname)"
           fi
           msg="Installing $(echo "$missdeps" | tr [:upper:] [:lower:])"
           if IncludesOption "$opts" "--rmdeps" || IncludesOption "$opts" "-r" ; then
