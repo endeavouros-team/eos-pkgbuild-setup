@@ -1357,7 +1357,7 @@ Options:
     --dryrun, -nn               Show what would be done, but do nothing.
     --explain-hook-marks, -e    Explain markings on hooks.
     --fetch-timeout=X | -T=X    Timeout (in seconds) when asking to fetch remote assets (default: no timeout).
-    --pkgnames="X"              X is a space separated list of packages to use instead of PKGNAMES array in assets.conf.
+    --pkgnames="X"              X is a comma separated list of packages to use instead of PKGNAMES array in assets.conf.
     --pkgdiff                   Show changelog for modified packages.
     --repoup                    (Advanced) Force update of repository database files.
     --no-aur                    Dont't try to use packages from the AUR (sometimes it is unavailable).
@@ -1571,7 +1571,12 @@ Main2() {
     export PACKAGER="$_PACKAGER"
     echo2 "PACKAGER: $PACKAGER"
 
-    [ -n "$PKGNAMES_PARAMETER" ] && PKGNAMES=(${PKGNAMES_PARAMETER#*=})
+    # [ "$PKGNAMES_PARAMETER" ] && PKGNAMES=(${PKGNAMES_PARAMETER#*=})
+    if [ "$PKGNAMES_PARAMETER" ] ; then
+        PKGNAMES_PARAMETER="${PKGNAMES_PARAMETER#*=}"       # remove leading --pkgnames=
+        PKGNAMES_PARAMETER="${PKGNAMES_PARAMETER//,/ }"     # convert commas to spaces
+        PKGNAMES=($PKGNAMES_PARAMETER)
+    fi
 
     filelist_txt="$ASSETSDIR/repofiles.txt"
     use_filelist="$USE_GENERATED_FILELIST"
@@ -2199,6 +2204,8 @@ Main() {
     local PROGNAME="${0##*/}"
     [ "$PROGNAME" ] || PROGNAME="${BASH_ARGV0##*/}"
     [ "$PROGNAME" ] || PROGNAME="assets.make"
+
+    [[ "$*" =~ "--help" ]] && Usage 0
 
     local -r ASSETS_CONF=assets.conf   # This file must exist in the current folder when building packages.
     local -r ARCH=x86_64
