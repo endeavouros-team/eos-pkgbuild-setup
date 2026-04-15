@@ -1722,7 +1722,7 @@ Main2() {
             color="${RED}"
         fi
 
-        printf2 "\nItems to build: %s%s/%s%s\n" "$color" "$total_items_to_build" "${#PKGNAMES[@]}" "$(Color1)"
+        printf2 "\nItems to build for %s: %s%s/%s%s\n" "$(Color1 warning)$REPONAME$(Color1)" "$color" "$total_items_to_build" "${#PKGNAMES[@]}" "$(Color1)"
 
         if [ "$items_waiting" != "0" ] ; then
             printf2   "Items waiting:  %s\n" "$items_waiting"
