@@ -64,6 +64,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-downgrade
     eos-dracut                              # was: dracut-hook/aur
     eos-hooks
+    eos-hwtool
     eos-iso-hotfix
     eos-lightdm-gtk-theme
     eos-lightdm-slick-theme
@@ -90,6 +91,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-update-notifier
     fetch-iso
     # filesystem
+    iso-create-ml
     kernel-install-for-dracut
     keyserver-rank                          # probably not needed?
     # lsb-release
@@ -102,23 +104,16 @@ PKGNAMES=(                                        # Alphabetically ordered.
     reflector-simple
     welcome
     # yad                                   # patch no more needed?
-
-    # devel packages
-    #eos-settings-budgie-devel
-    #eos-settings-cinnamon-devel
-    #eos-settings-gnome-devel
-    #eos-settings-mate-devel
-    #eos-settings-xfce4-devel
 )
-PKGNAMES+=(
+_PKGNAMES_FROM_AUR=(
     bashdb/aur
     downgrade/aur
     paru/aur
-    rate-mirrors/aur
     yay/aur
     zfs-dkms/aur
     zfs-utils/aur
 )
+PKGNAMES+=("${_PKGNAMES_FROM_AUR[@]}")
 
 # PKGNAMES=( ckbcomp )
 
@@ -138,6 +133,7 @@ PKGNAMES+=(
 # Note: include the definition in quotes because of the pipe character '|'.
 #
 PKGNAMES_WAIT=(
+    # calamares                         # waiting Triton
     # Waiting for Ganymede release:
     # 'eos-breeze-sddm'
     # 'eos-settings-plasma'
