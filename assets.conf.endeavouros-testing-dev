@@ -34,9 +34,9 @@ local PKGNAMES=(                                    # actually: directory name o
     eos-pkgbuild-setup
 
     ###################################### For old Nvidia GPUs older than Turing: ########################################
-    lib32-nvidia-580xx-utils/aur
-    nvidia-580xx-utils/aur
-    nvidia-580xx-settings/aur
+    # lib32-nvidia-580xx-utils/aur
+    # nvidia-580xx-utils/aur
+    # nvidia-580xx-settings/aur
 )
 
 if false && [ $AUR_IS_AVAILABLE = yes ] ; then
