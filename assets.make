@@ -6,18 +6,19 @@
 
 source /etc/eos-color.conf
 
-Color2() { eos-color "$1" 2; }       # Color to stderr
-Color1() { eos-color "$1"; }         # Color to stdout
-# echo2info() { Color2 info; echo2 "==>" "$@"; Color2 reset; }
+Color2() { eos-color "$1" 2; }        # Color to stderr
+Color1() { eos-color "$1"; }          # Color to stdout
 
-echoreturn() { echo "$@" ; }     # for "return" values!
-
+echoreturn() { echo "$@" ; }          # for "return" values!
 echo2()      { echo   "$@" >&2 ; }    # output to stderr
-printf2()    { printf "$@" >&2 ; }    # output to stderr
+printf2()    {
+    # shellcheck disable=2059
+    printf "$@" >&2                   # output to stderr
+}
 
 DIE() {
     Color2 error
-    echo2 "Error: $@"
+    echo2 "Error:" "$@"
     echo2 "Call stack lines: ${BASH_LINENO[*]}"
     if [ "${FUNCNAME[1]}" = "Main" ] ; then
         Color2 tip
@@ -28,6 +29,15 @@ DIE() {
     exit 1
 }
 WARN()       { Color2 warning; echo2 -n "Warning: " ; echo2 "$@" ; Color2; }
+
+_ASSERT_() {
+    local ret=0
+    "$@" &> /dev/null || ret=$?
+    if [ $ret -ne 0 ] ; then
+       echo2 "'$*' failed"
+       exit $ret
+    fi
+}
 
 FileSizePrint() {
     # Print size of file in bytes, numbers are is groups of three.
@@ -42,8 +52,8 @@ FileSizePrint() {
 
     nr=$(stat -c %s "$file")
     left=${#nr}
-    while [ $left -gt 0 ] ; do
-        if [ $remove -gt $left ] ; then
+    while [ "$left" -gt 0 ] ; do
+        if [ "$remove" -gt "$left" ] ; then
             remove=$left
         fi
         ((left -= remove))
@@ -78,6 +88,7 @@ read2() {
         case $name in
             t) count="$OPTARG" ; has_t_opt="yes" ;;
             p) prompt="$OPTARG" ;;
+            *) ;;
         esac
     done
 
@@ -97,10 +108,11 @@ read2() {
         esac
     done
 
+    # shellcheck disable=2162
     # read value
     if [ "$has_t_opt" = "yes" ] ; then
         # while reading, show a seconds counter
-        while [ $count -gt 0 ] ; do
+        while [ "$count" -gt 0 ] ; do
             printf2 "%s[%s] " "$cr" "$count"
             read -t 1 -p "$prompt" "${args[@]}" >&2
             retval=$?
@@ -149,10 +161,12 @@ GetPkgbuildValue() {       # this is used in assets.conf too!
         unset -f pkgver                        # remove possible function from another PKGBUILD
     done
 
+    # shellcheck disable=1090
     source "$PKGBUILD" || return 1   # reading PKGBUILD may fail
 
     while [ "$1" ] ; do
-        [ "$2" ] || DIE "$FUNCNAME: internal error: number of call parameters is not even!"
+        [ "$2" ] || DIE "${FUNCNAME[0]}: internal error: number of call parameters is not even!"
+        # shellcheck disable=2034
         local -n retvar_for_all="$1"
         GetPkgbuildValue1 "$2" retvar_for_all
         unset -n retvar_for_all
@@ -167,6 +181,7 @@ GetPkgbuildValue1() {
     local -n retvar="$2"
     local retval2=""
 
+    # shellcheck disable=2154,2178
     case "$varname" in
         arch)          retvar=("${arch[@]}") ;;
         backup)        retvar=("${backup[@]}") ;;
@@ -200,14 +215,15 @@ GetPkgbuildValue1() {
                 # We want to run pkgver() to get the correct pkgver.
                 # But first we must run makepkg because the needed git stuff hasn't been fetched yet...
 
-                Pushd ${PKGBUILD%/*}
+                Pushd "${PKGBUILD%/*}"
 
-                makepkg --skipinteg -od &> /dev/null || DIE "$FUNCNAME: cannot determine 'pkgver' from $PKGBUILD."
+                makepkg --skipinteg -od &> /dev/null || DIE "${FUNCNAME[0]}: cannot determine 'pkgver' from $PKGBUILD."
 
                 # sed -E -i "$PKGBUILD" -e "s|^pkgrel=[0-9\.]+|pkgrel=$pkgrel|"       # Prevents makepkg from changing pkgrel to 1.
 
                 if false ; then
                     unset -f pkgver
+                    # shellcheck disable=1090
                     source "$PKGBUILD"
                     retvar="$(pkgver)"
                 else
@@ -219,6 +235,7 @@ GetPkgbuildValue1() {
                 unset -f pkgver
 
                 Popd
+                # shellcheck disable=2128
                 retval2="$(echo "$retvar" | tail -n1)"   # $retvar may have 2 items in 2 lines !?
                 [ -n "$retval2" ] && retvar="$retval2"
             else
@@ -226,7 +243,7 @@ GetPkgbuildValue1() {
             fi
             ;;
         *)
-            WARN "$FUNCNAME: unsupported variable name '$varname'"
+            WARN "${FUNCNAME[0]}: unsupported variable name '$varname'"
             return 1
             ;;
     esac
@@ -260,33 +277,36 @@ HandlePossibleEpoch() {
 
         if [ ! -r "$PKGBUILD_ROOTDIR/$Pkgname/PKGBUILD" ] ; then
             if IsAurPackage "$Pkgname" ; then
-                cd "$PKGBUILD_ROOTDIR"
+                _ASSERT_ cd "$PKGBUILD_ROOTDIR"
                 $helper -Ga "$Pkgname" >/dev/null || DIE "fetching PKGBUILD of '$Pkgname' failed."
             else
                 DIE "sorry, getting PKGBUILD of '$Pkgname' not supported yet."
             fi
         fi
-        cd "$PKGBUILD_ROOTDIR/$Pkgname"
+        _ASSERT_ cd "$PKGBUILD_ROOTDIR/$Pkgname"
     fi
 
     GetPkgbuildValue "PKGBUILD" Epoch "epoch"
 
+    # shellcheck disable=2034
     if [ -z "$Epoch" ] ; then
         Newname="$pkg"
     else
+        # shellcheck disable=2001
         Newname=$(echo "$pkg" | sed "s|\(${Pkgname}-[0-9][0-9]*\)\.\(.*\)|\1:\2|")
     fi
 
     if [ -n "$cwd" ] ; then
-        cd "$cwd"
-        [ -n "$tmpdir" ] && rm -rf $tmpdir
+        _ASSERT_ cd "$cwd"
+        [ -n "$tmpdir" ] && rm -rf "$tmpdir"
     fi
 }
 
 IncludesOption() {
-    local where="$1"     # list of options, e.g. "-r --rmdeps"
+    local where="$1"     # space-separated list of options, e.g. "-r --rmdeps"
     local opt="$2"       # e.g. "-r"
 
+    # shellcheck disable=2086
     printf "%s\n" $where | grep -w "\\$opt" >/dev/null
 }
 
@@ -297,7 +317,8 @@ Build()
     local pkgbuilddir="$3"
     local Pkgname
     local pkg pkgs
-    local workdir=$(mktemp -d)
+    local workdir
+    workdir=$(mktemp -d)
     local log=$workdir/buildlog-"$pkgdirname".log
     local missdeps="Missing dependencies"
     local opts=""
@@ -317,12 +338,14 @@ Build()
       # now build, assume we have PKGBUILD
       # special handling for missing dependencies
       local exitcode=0
+      # shellcheck disable=2086
       LANG=C makepkg --clean $opts  &> "$log" || {
           exitcode=$?
-          if [ -z "$(grep "$missdeps:" "$log")" ] ; then
+          if ! grep -q "$missdeps:" "$log" ; then
               Popd -c2
-              DIE "makepkg for '$Pkgname' failed (makepkg: see $log and files at $workdir/$pkgdirname)"
+              DIE "makepkg for '$Pkgname' failed, exitcode=$exitcode (makepkg: see $log and files at $workdir/$pkgdirname)"
           fi
+          # shellcheck disable=2060
           msg="Installing $(echo "$missdeps" | tr [:upper:] [:lower:])"
           if IncludesOption "$opts" "--rmdeps" || IncludesOption "$opts" "-r" ; then
               msg+=" and removing them right after build"
@@ -336,13 +359,13 @@ Build()
 
           PACMAN=$wrapper makepkg --syncdeps --clean $opts >"$log" || { Popd -c2 ; DIE "makepkg for '$Pkgname' failed (see $log)" ; }
       }
-      pkgs=(*.pkg.tar.$_COMPRESSOR)
-      case "$pkgs" in
+      pkgs=(*.pkg.tar."$_COMPRESSOR")
+      case "${pkgs[0]}" in
           "" | "*.pkg.tar.$_COMPRESSOR") DIE "$pkgdirname: build failed" ;;
       esac
       for pkg in "${pkgs[@]}" ; do
           # HandlePossibleEpoch "$Pkgname" "$pkg" pkg     # not needed here since makepkg should handle epoch OK (?)
-          mv $pkg "$assetsdir"
+          mv "$pkg" "$assetsdir"
           built+=("$assetsdir/$pkg")
           built_under_this_pkgname+=("$pkg")
       done
@@ -354,6 +377,7 @@ Build()
 PkgBuildName()
 {
     local pkgdirname="$1"
+    # shellcheck disable=1090
     source "$PKGBUILD_ROOTDIR"/"$(JustPkgname "$pkgdirname")"/PKGBUILD
     echoreturn "$pkgname"
 }
@@ -361,7 +385,8 @@ PkgBuildName()
 PkgBuildVersion()
 {
     local _pkgdirname="$1"
-    local _srcfile="$PKGBUILD_ROOTDIR"/"$(JustPkgname "$_pkgdirname")"/PKGBUILD
+    local _srcfile
+    _srcfile="$PKGBUILD_ROOTDIR"/"$(JustPkgname "$_pkgdirname")"/PKGBUILD
 
     if [ ! -r "$_srcfile" ] ; then
         DIE "'$_srcfile' does not exist."
@@ -390,6 +415,7 @@ LocalVersion()
     Pkgname="$(JustPkgname "$Pkgname")"
 
     for xx in zst xz ; do         # order is important because of change to zstd!
+        # shellcheck disable=2153
         pkgs=$(ListPkgsWithName "$ASSETSDIR/$Pkgname" "$xx")
         test -n "$pkgs" && break
     done
@@ -421,13 +447,14 @@ JustPkgname()
         aur/*)    AurMarkingFail "$fakepath" ;;
         # *)      fakepath="${fakepath}"   ;;
     esac
-    echoreturn ${fakepath##*/}
+    echoreturn "${fakepath##*/}"
 }
 
 HookIndicator() {
     local mark="$1"
     local force="$2"
-    if [ "$fetch" = "yes" ] || [ "$force" = "yes" ] ; then
+    # if [ "$fetch" = "yes" ] || [ "$force" = "yes" ] ; then
+    if [ "$force" = "yes" ] ; then
         echo2 -n "$mark "
     fi
 }
@@ -584,7 +611,10 @@ Compare() {
             Color2 warning; echo2 "SKIP (unacceptable PKGBUILD)"; Color2
             return 1
         else
-            Color2 info; read -p "Continue $PROGNAME (Y/n): " >&2; Color2
+            Color2 info
+            # shellcheck disable=2162
+            read -p "Continue $PROGNAME (Y/n): " >&2
+            Color2
             case "$REPLY" in
                 [Nn]*) DIE "stopped due to the unacceptable PKGBUILD of $PKGNAME" ;;
             esac
@@ -625,6 +655,7 @@ GetRemoteAssetNames() {
         if [ -r "$dir/$REPONAME.db" ] && [ -d "$GITDIR/.git" ] ; then
             Pushd "$dir"
             git pull >& /dev/null
+            # shellcheck disable=2012
             remote_files=$(ls -1 | sort)
             Popd
             return 0
@@ -643,12 +674,12 @@ GetRemoteAssetNames() {
     fi
 
     # fallback to release assets
-    remote_files=$(release-asset-names ${RELEASE_TAGS[0]} | sort)
+    remote_files=$(release-asset-names "${RELEASE_TAGS[0]}" | sort)
     names_from_git=no
 }
 
 AskFetchingFromGithub() {
-    local -r msg="Fetch assets from github (Y=only if different, n=no, f=yes)? "
+    local -r msg="Fetch assets from github (C=only if different, n=no, y=yes)? "
     if [ "$fetch_timeout" ] ; then
         read2 -p "$msg" -t "$fetch_timeout"
     else
@@ -656,10 +687,10 @@ AskFetchingFromGithub() {
         read2
     fi
     case "$REPLY" in
-        [yY]*|"")
+        [cC]*|"")
             echo2 "==> Using remote assets if there are differences, otherwise local."
             ;;
-        [fF]*|"")
+        [yY]*)
             echo2 "==> Using remote assets."
             return 0
             ;;
@@ -681,7 +712,8 @@ AskFetchingFromGithub() {
     local diffs=none        # what kind of diffs, if any?
 
     if [ "$use_release_assets" = "yes" ] ; then
-        local_files=$(ls -1 *.{db,files,zst,xz,sig} 2> /dev/null | sort)   # $asset_file_endings
+        # shellcheck disable=2012
+        local_files=$(ls -1 -- *.{db,files,zst,xz,sig} 2> /dev/null | sort)   # $asset_file_endings
         GetRemoteAssetNames
     fi
 
@@ -698,16 +730,19 @@ AskFetchingFromGithub() {
         fi
 
         if [ $diffs = real ] ; then
-            local tmpdir_local=$(mktemp -d /tmp/local.XXX)
-            local tmpdir_remote=$(mktemp -d /tmp/remote.XXX)
+            local tmpdir_local tmpdir_remote
+            tmpdir_local=$(mktemp -d /tmp/local.XXX)
+            tmpdir_remote=$(mktemp -d /tmp/remote.XXX)
 
+            # shellcheck disable=2046,2001
             touch $(echo "$local_files"  | sed "s|^|$tmpdir_local/|")
+            # shellcheck disable=2046,2001
             touch $(echo "$remote_files" | sed "s|^|$tmpdir_remote/|")
 
-            LANG=C diff $tmpdir_local $tmpdir_remote | sed -E \
+            LANG=C diff "$tmpdir_local" "$tmpdir_remote" | sed -E \
                                                            -e "s|^Only in /tmp/remote[^:]+: |Only in REMOTE: |" \
                                                            -e "s|^Only in /tmp/local[^:]+: |Only in LOCAL:  |"
-            rm -rf $tmpdir_local $tmpdir_remote
+            rm -rf "$tmpdir_local" "$tmpdir_remote"
         fi
     fi
 
@@ -720,8 +755,9 @@ AskFetchingFromGithub() {
 
 OnlyEpochDiffs() {
     # input: $local_files and $remote_files
-    local count_ll=$(echo "$local_files" | wc -l)
-    local count_rr=$(echo "$remote_files" | wc -l)
+    local count_ll count_rr
+    count_ll=$(echo "$local_files" | wc -l)
+    count_rr=$(echo "$remote_files" | wc -l)
     local loc rem
     local ll rr ix
     local epoch_diff_count=0
@@ -761,24 +797,25 @@ Assets_clone()
         if [ -n "$GITREPOURL" ] && [ -n "$GITREPODIR" ] ; then
             AskFetchingFromGithub || return 0
             echo2 "==> Copying files from the git repo to local dir."
-            local tmpdir=$(mktemp -d)
-            Pushd $tmpdir
+            local tmpdir
+            tmpdir=$(mktemp -d)
+            Pushd "$tmpdir"
             git clone  "$GITREPOURL" >& /dev/null || DIE "cloning '$GITREPOURL' failed"
             rm -f "$ASSETSDIR"/*.{db,files,zst,xz,sig,txt,old}      # $asset_file_endings
             if true ; then
                 local srcfiles=()
                 readarray -t srcfiles < <(/bin/ls "$GITREPODIR"/*.{db,files,zst,xz,sig} 2>/dev/null)
-                if [ "$srcfiles" ] ; then
+                if [ "${srcfiles[0]}" ] ; then
                     cp "${srcfiles[@]}" "$ASSETSDIR"
                 else
-                    DIE "$FUNCNAME: no files in $GITREPODIR to copy to $ASSETSDIR!"
+                    DIE "${FUNCNAME[0]}: no files in $GITREPODIR to copy to $ASSETSDIR!"
                 fi
             else
                 cp "$GITREPODIR"/*.{db,files,zst,xz,sig} "$ASSETSDIR"   # $asset_file_endings
             fi
             sync
             Popd
-            rm -rf $tmpdir
+            rm -rf "$tmpdir"
         else
             DIE "GITREPOURL and/or GITREPODIR missing for $REPONAME while USE_RELEASE_ASSETS = '$use_release_assets'"
         fi
@@ -807,18 +844,19 @@ Assets_clone()
     local tag
     local remotes remote
     local waittime=30
+    local leftovers
 
     for tag in "${RELEASE_TAGS[@]}" ; do
-        remotes="$(HubReleaseShow -f %as%n $tag | sed 's|^.*/||')"
+        remotes="$(HubReleaseShow -f %as%n "$tag" | sed 's|^.*/||')"
         for remote in $remotes ; do
-            [ -r $remote ] || break
+            [ -r "$remote" ] || break
         done
         break
     done
 
     DebugBreak "remote asset checking"
 
-    if [ -r $remote ] ; then
+    if [ -r "$remote" ] ; then
         read2 -p "Asset names at github are the same as here, fetch anyway (y/N)? " -t $waittime
         case "$REPLY" in
             [yY]*) ;;
@@ -833,8 +871,8 @@ Assets_clone()
     # so delete all packages and databases.
 
     # rm -f *.{db,files,zst,xz,sig,txt,old}                                   # $asset_file_endings
-    mv *.{db,files,zst,xz,sig,txt,old} "$save_folder"/ 2>/dev/null            # $asset_file_endings
-    local leftovers="$(command ls *.{db,files,zst,xz,sig,old} 2>/dev/null)"   # $asset_file_endings
+    mv -- *.{db,files,zst,xz,sig,txt,old} "$save_folder"/ 2>/dev/null         # $asset_file_endings
+    leftovers="$(command ls -- *.{db,files,zst,xz,sig,old} 2>/dev/null)"      # $asset_file_endings
     test -z "$leftovers" || DIE "removing local assets failed!"
 
     echo2 "==> Fetching all github assets..."
@@ -852,7 +890,7 @@ Assets_clone()
             echo2 "==> Copying files from '$cpdir' ..."
             cp "$cpdir"/* .
         else
-            HubRelease download $xx
+            HubRelease download "$xx"
             sleep 1
 
             # Unfortunately github release assets cannot contain a colon (epoch mark) in file name, so rename those packages locally
@@ -870,8 +908,8 @@ Assets_clone()
                 if [ "$newname" != "$oldname" ] ; then
                     echo2 "==> Fix: $oldname     --> $newname"
                     echo2 "==> Fix: $oldname.sig --> $newname.sig"
-                    mv $oldname $newname
-                    mv $oldname.sig $newname.sig
+                    mv "$oldname" "$newname"
+                    mv "$oldname".sig "$newname".sig
                 fi
             done
         fi
@@ -884,14 +922,16 @@ Assets_clone()
 PkgbuildExists() {
     local Pkgname="$1"                         # a name from "${PKGNAMES[@]}"
     local special="$2"
-    local yy=$(JustPkgname "$Pkgname")
+    local yy
+    yy=$(JustPkgname "$Pkgname")
 
     if [ -r "$PKGBUILD_ROOTDIR/$yy/PKGBUILD" ] ; then
         return 0
     else
         ((no_pkgbuild_count++))
         if [ "$special" != "" ] ; then
-            local files=$(ls -l "$PKGBUILD_ROOTDIR/$yy" 2>/dev/null)
+            local files
+            files=$(ls -l "$PKGBUILD_ROOTDIR/$yy" 2>/dev/null)
             printf2 "$WARNING (${PROGNAME}, $special): no PKGBUILD!\n"
             if [ -n "$files" ] ; then
                 printf2 "File listing:\n"
@@ -929,14 +969,14 @@ ShowIndented() {
     local ind=""
 
     case "$indent_level" in
-        "") ;;
+        "" | 0) ;;
         *)
             for ((xx=0; xx < indent_level; xx++)) ; do
                 ind+="    "
             done
             ;;
     esac
-    printf2 "%s%-35s : " "$ind" "$1"
+    printf2 "%s%-35s : " "$ind" "$txt"
 }
 
 RationalityTests()
@@ -966,7 +1006,7 @@ Constructor()
     # make sure proper .git symlink exists; create new or change existing if necessary
 
     if [ ! "$GITDIR"/.git -ef "$ASSETSDIR"/.git ] ; then
-        echo2 "Warning: '$ASSETSDIR/.git' ($(ls -l $ASSETSDIR/.git)) does not refer to proper place, fixing..."
+        echo2 "Warning: '$ASSETSDIR/.git' ($(ls -l "$ASSETSDIR"/.git)) does not refer to proper place, fixing..."
         rm -f "$ASSETSDIR"/.git                || DIE "failed to remove: '$ASSETSDIR/.git'"
         ln -s "$GITDIR"/.git "$ASSETSDIR"/.git || DIE "failed to symlink: '$ASSETSDIR/.git' -> '$GITDIR/.git'"
     fi
@@ -984,9 +1024,11 @@ ShowOldCompressedPackages() {
     local pkg pkgdir Pkgname
     local pkg2 pkg22
 
+    # shellcheck disable=2045
     for pkg in $(ls "$ASSETSDIR"/*.pkg.tar.zst 2>/dev/null) ; do
         Pkgname=${pkg##*/}
         pkgdir=${pkg%/*}
+        # shellcheck disable=2001
         pkg2="$pkgdir/$(echo "$Pkgname" | sed 's|\-[0-9].*$||')"
         pkg22="$(ls "$pkg2"-*.pkg.tar.xz 2>/dev/null)"
         if [ -n "$pkg22" ] ; then
@@ -996,15 +1038,6 @@ ShowOldCompressedPackages() {
             done
         fi
     done
-}
-
-_ASSERT_() {
-    local ret=0
-    "$@" &> /dev/null || ret=$?
-    if [ $ret -ne 0 ] ; then
-       echo2 "'$*' failed"
-       exit $ret
-    fi
 }
 
 _pkgbuilds_alt_hook() {
@@ -1027,10 +1060,12 @@ _pkgbuilds_alt_hook() {
 PkgAdjusted() { printf2 "$pkg: planned adjustment. "; }
 
 Fix_PKGBUILD_if_changed() {
-    local out=$(/bin/git diff)        # used for detecting local changes in PKGBUILD files
+    local out
     local pkg
     local changed_pkgs                # list of package names that have a changed PKGBUILD
     local left                        # number of changed packages that have no "fix" yet
+
+    out=$(/bin/git diff)        # used for detecting local changes in PKGBUILD files
 
     changed_pkgs="$(echo "$out" | grep -E "^... b/.*/PKGBUILD$" | sed -E 's|^... b/(.*)/PKGBUILD$|\1|')"   # which PKGBUILDs have changed
     if [ "$changed_pkgs" ] ; then
@@ -1047,7 +1082,7 @@ Fix_PKGBUILD_if_changed() {
                         # Special handling for calamares-git in repo endavouros-testing-dev because its PKGBUILD has line:
                         #    pkgver=.
                         ((left--))                                                            # this is a known thing, we fix it here
-                        if [ "$(echo "$out" | grep "^-pkgver=\.$")" ] ; then                  # line 'pkgver=.' replaced?
+                        if echo "$out" | grep -q "^-pkgver=\.$" ; then                        # line 'pkgver=.' replaced?
                             sed -i calamares-git/PKGBUILD -e "s|^pkgver=.*$|pkgver=.|"        # set it back to 'pkgver=.' before 'git pull'
                             PkgAdjusted
                         fi
@@ -1069,7 +1104,7 @@ Fix_PKGBUILD_if_changed() {
             ;;
     esac
 
-    if [ $left -gt 0 ] ; then
+    if [ "$left" -gt 0 ] ; then
         # show unknown changes and let user fix them
         echo2 "local $REPONAME/$PKGBUILDS has differences with the repository, please fix it if possible"
         /bin/meld .
@@ -1079,6 +1114,7 @@ Fix_PKGBUILD_if_changed() {
 
 WantToContinue() {
     while true ; do
+        # shellcheck disable=2162
         read -p "==> Want to continue (Y/n)? " >&2
         case "$REPLY" in
             "" | [Yy]*) break ;;
@@ -1134,7 +1170,7 @@ GitUpdate_repo() {
     local -r app=/usr/bin/EosGitUpdate
     local newrepodir="$GITDIR"
 
-    if [ -n "$built" ] || [ "$repoup" = "1" ] ; then
+    if [ "${built[0]}" ] || [ "$repoup" = "1" ] ; then
         # if [ -e "$newrepodir/.GitUpdate" ] ; then
             FinalStopBeforeSyncing "$REPONAME repo"
             Pushd "$newrepodir"
@@ -1185,7 +1221,7 @@ AskYesNo() {
 
     while true ; do
         eos-color warning 2                      # TODO: better "note" than "warning"
-        read2 -sn1 -p "$prompt" -t $ask_timeout
+        read2 -sn1 -p "$prompt" -t "$ask_timeout"
         eos-color reset 2
         if [ $? -eq 0 ] ; then
             case "$REPLY" in
@@ -1265,13 +1301,13 @@ MirrorCheck() {
         timeout=3
     fi
     if [ -x "$checker" ] ; then
-        if [ $timeout -eq 180 ] ; then
+        if [ "$timeout" -eq 180 ] ; then
             read2 -p "Do $mirror_check (Y/n)?"
         fi
         case "$REPLY" in
             ""|[yY]*)
                 echo2 "Starting $mirror_check after countdown, please wait..."
-                _SleepSeconds $timeout
+                _SleepSeconds "$timeout"
                 $checker $opt .
                 ;;
         esac
@@ -1335,7 +1371,7 @@ ListPkgsWithName() {
     fi
 
     Pushd "$dir"
-    tmp=$(/bin/ls -1v "$Pkgname"-*.pkg.tar.$compr 2> /dev/null | grep -E "${Pkgname}-[^-]+-[^-]+-[^\.]+\.pkg\.tar\.$compr$")
+    tmp=$(/bin/ls -1v "$Pkgname"-*.pkg.tar."$compr" 2> /dev/null | grep -E "${Pkgname}-[^-]+-[^-]+-[^\.]+\.pkg\.tar\.$compr$")
     Popd
     [ "$tmp" ] || return
 
@@ -1409,7 +1445,7 @@ DowngradeProbibited() {
     local cmpresult="$1"
     local allow_downgrade="$2"
 
-    [ $cmpresult -lt 0 ] && [ "$allow_downgrade" = "no" ] && [ "${HAS_GIT_PKGVER[$pkgdirname]}" != "yes" ]
+    [ "$cmpresult" -lt 0 ] && [ "$allow_downgrade" = "no" ] && [ "${HAS_GIT_PKGVER[$pkgdirname]}" != "yes" ]
 }
 
 ShowResult() {
@@ -1430,7 +1466,7 @@ ShowResult() {
 
 MovePackageAsLastToBuild() {
     local -r pkgname="$1"
-    if [ "$(printf "%s\n" "${PKGNAMES[@]}" | grep "^$pkgname$")" ] ; then
+    if printf "%s\n" "${PKGNAMES[@]}" | grep -q "^$pkgname$" ; then
         local tmp=()
         readarray -t tmp < <(printf "%s\n" "${PKGNAMES[@]}" | grep -v "^$pkgname$")
         tmp+=("$pkgname")
@@ -1462,7 +1498,7 @@ Main2() {
     local xx yy zz
     local repoup=0
     local explain_hooks=no
-    local pkgver_suffix=""
+    #local pkgver_suffix=""
     local pkgdiff=unknown            # yes=show AUR diff, no=don't show, unknown=need to ask for yes or no
     local filelist_txt
     local use_filelist               # yes or no
@@ -1479,6 +1515,7 @@ Main2() {
     local helper=""
     local -r config_file="/etc/eos-script-lib-yad.conf"
 
+    # shellcheck disable=1090
     source "$config_file"
 
     while true ; do
@@ -1534,7 +1571,7 @@ Main2() {
 
                 # currently not used!
                 --mirrorcheck=*)           mirror_check_wait="${xx#*=}";;
-                --versuffix=*)             pkgver_suffix="${xx#*=}" ;;
+                #--versuffix=*)             pkgver_suffix="${xx#*=}" ;;
 
                 -h | --help | *) Usage 0  ;;
             esac
@@ -1551,7 +1588,8 @@ Main2() {
     local REPOSIG=0                         # 1 = sign repo too, 0 = don't sign repo
     local SKIP_UNACCEPTABLE_PKGBUILD=()
 
-    source /etc/$PROGNAME.conf     # sets the base folder of everything
+    # shellcheck disable=1090
+    source "/etc/$PROGNAME.conf"     # sets the base folder of everything
     [ -n "$EOS_ROOT" ] || DIE "EOS_ROOT is not set in /etc/$PROGNAME.conf!"
     [ -n "$_PACKAGER" ] || DIE "_PACKAGER is not set in /etc/$PROGNAME.conf!"
 
@@ -1566,6 +1604,7 @@ Main2() {
             echo2 failure
         fi
     fi
+    # shellcheck disable=1090
     source $ASSETS_CONF                     # local variables (with CAPITAL letters)
 
     export PACKAGER="$_PACKAGER"
@@ -1575,12 +1614,14 @@ Main2() {
     if [ "$PKGNAMES_PARAMETER" ] ; then
         PKGNAMES_PARAMETER="${PKGNAMES_PARAMETER#*=}"       # remove leading --pkgnames=
         PKGNAMES_PARAMETER="${PKGNAMES_PARAMETER//,/ }"     # convert commas to spaces
+        # shellcheck disable=2206
         PKGNAMES=($PKGNAMES_PARAMETER)
     fi
 
     filelist_txt="$ASSETSDIR/repofiles.txt"
     use_filelist="$USE_GENERATED_FILELIST"
     test -n "$use_filelist" || use_filelist="no"
+    # shellcheck disable=2153
     use_release_assets="$USE_RELEASE_ASSETS"
     test -n "$use_release_assets" || use_release_assets=yes
 
@@ -1690,7 +1731,7 @@ Main2() {
                 fi
                 continue
             fi
-            if [ $cmpresult -eq 0 ] ; then
+            if [ "$cmpresult" -eq 0 ] ; then
                 ShowResult "$OK ($tmpcurr)" "$hookout"
                 continue
             fi
@@ -1704,7 +1745,7 @@ Main2() {
             ((total_items_to_build++))
             ShowResult "$CHANGED ($tmpcurr ==> $tmp)" "$hookout"
 
-            [ $cmpresult -gt 0 ] && WantPkgDiffs "$xx" "$pkgdirname"
+            [ "$cmpresult" -gt 0 ] && WantPkgDiffs "$xx" "$pkgdirname"
         done
 
         DebugBreak "before building"
@@ -1782,7 +1823,7 @@ Main2() {
 
             Build "$pkgdirname" "$buildsavedir" "$PKGBUILD_ROOTDIR/$pkgdirname"
 
-            echo2 "    ==> Build time: $(TimeStamp $buildStartTime)"
+            echo2 "    ==> Build time: $(TimeStamp "$buildStartTime")"
             for yy in "${built_under_this_pkgname[@]}" ; do
                 printf2 "    ==> %15s %s\n" "$(FileSizePrint "$buildsavedir/$yy")" "$yy"
                 #echo2  "    ==> $yy"
@@ -1810,7 +1851,7 @@ Main2() {
         done
     fi
 
-    if [ -n "$built" ] || [ "$repoup" = "1" ] ; then
+    if [ "${built[0]}" ] || [ "$repoup" = "1" ] ; then
 
         # We have something built to be sent to github, or we want to update repo to github.
         
@@ -1835,7 +1876,7 @@ Main2() {
 
                 mv -i "${built[@]}" "${signed[@]}" "$ASSETSDIR"
 
-                rm -rf $buildsavedir
+                rm -rf "$buildsavedir"
 
                 # ...and fix the variables 'built' and 'signed' accordingly.
                 tmp=("${built[@]}")
@@ -1859,7 +1900,7 @@ Main2() {
                     esac
                 done
 
-                if [ -n "$removable" ] ; then
+                if [ "${removable[0]}" ] ; then
                     # Here we have some old packages after upgrading them.
                     # Save them automatically into an archive at github.
                     # Then downgrading of EOS packages can be supported with app 'eos-downgrade'.
@@ -1888,7 +1929,7 @@ Main2() {
                             if [ ! -e .git ] || [ -L .git ] ; then
                                 if [ -d "$ARCHIVE_GIT" ] ; then
                                     rm -f .git
-                                    ln -s "$ARCHIVE_GIT"
+                                    ln -s "$ARCHIVE_GIT" .       # ln -s "$ARCHIVE_GIT"
                                 fi
                             fi
                             if [ -d .git ] ; then
@@ -1908,39 +1949,39 @@ Main2() {
                     fi
                 fi
                 
-                if [ -n "$repo_removes" ] ; then
+                if [ "${repo_removes[0]}" ] ; then
                     # check if repo db contains any of the packages to be removed
                     # yy="$(tar --list --exclude */desc -f "$ASSETSDIR/$REPONAME".db.tar.$REPO_COMPRESSOR | sed 's|-[0-9].*$||')"
-                    yy="$(tar --list -f "$ASSETSDIR/$REPONAME".db.tar.$REPO_COMPRESSOR | grep "/desc$" | sed 's|-[^-]*-[^-]*$||')"
+                    yy="$(tar --list -f "$ASSETSDIR/$REPONAME.db.tar.$REPO_COMPRESSOR" | grep "/desc$" | sed 's|-[^-]*-[^-]*$||')"
                     zz=()
                     for xx in "${repo_removes[@]}" ; do
-                        if [ -n "$(echo "$yy" | grep "^$xx$")" ] ; then
+                        if echo "$yy" | grep -q "^$xx$" ; then
                             zz+=("$xx")
                         fi
                     done
-                    if [ -n "$zz" ] ; then
+                    if [ -n "${zz[0]}" ] ; then
                         # packages found in the repo db, so remove them
-                        repo-remove "$ASSETSDIR/$REPONAME".db.tar.$REPO_COMPRESSOR "${zz[@]}"
+                        repo-remove "$ASSETSDIR/$REPONAME.db.tar.$REPO_COMPRESSOR" "${zz[@]}"
                         sleep 1
                     fi
                 fi
 
                 # Put changed assets (built) to db.
-                repo-add --include-sigs "$ASSETSDIR/$REPONAME".db.tar.$REPO_COMPRESSOR "${built[@]}"
+                repo-add --include-sigs "$ASSETSDIR/$REPONAME.db.tar.$REPO_COMPRESSOR" "${built[@]}"
             fi
         fi
 
         if [ $REPOSIG -eq 1 ] ; then
             echo2 "Signing repo $REPONAME ..."
-            repo-add --sign --key "$SIGNER" "$ASSETSDIR/$REPONAME".db.tar.$REPO_COMPRESSOR >/dev/null
+            repo-add --sign --key "$SIGNER" "$ASSETSDIR/$REPONAME.db.tar.$REPO_COMPRESSOR" >/dev/null
         fi
         for xx in db files ; do
-            rm -f "$ASSETSDIR/$REPONAME".$xx.tar.$REPO_COMPRESSOR.old{,.sig}
+            rm -f "$ASSETSDIR/$REPONAME.$xx.tar.$REPO_COMPRESSOR".old{,.sig}
             rm -f "$ASSETSDIR/$REPONAME".$xx
-            cp -a "$ASSETSDIR/$REPONAME".$xx.tar.$REPO_COMPRESSOR     "$ASSETSDIR/$REPONAME".$xx
+            cp -a "$ASSETSDIR/$REPONAME.$xx.tar.$REPO_COMPRESSOR"     "$ASSETSDIR/$REPONAME".$xx
             if [ $REPOSIG -eq 1 ] ; then
                 rm -f "$ASSETSDIR/$REPONAME".$xx.sig
-                cp -a "$ASSETSDIR/$REPONAME".$xx.tar.$REPO_COMPRESSOR.sig "$ASSETSDIR/$REPONAME".$xx.sig
+                cp -a "$ASSETSDIR/$REPONAME.$xx.tar.$REPO_COMPRESSOR".sig "$ASSETSDIR/$REPONAME".$xx.sig
             fi
         done
 
@@ -1986,7 +2027,7 @@ SettleDown() {
     for arg in "$@" ; do
         case "$arg" in
             --no-ask) ask=no ;;
-            -*) WARN "$FUNCNAME: unsupported parameter '$arg'." ;;
+            -*) WARN "${FUNCNAME[0]}: unsupported parameter '$arg'." ;;
             *) msg="$arg" ;;
         esac
     done
@@ -2021,13 +2062,10 @@ AssetCmd() {
         --no-ask) arg="$1" ; shift ;;
     esac
 
-    # AssetCmdShow "$@"
-    "$@"
-    if [ $? -ne 0 ] ; then
-        DIE "command '$*' failed!"
-    fi
+    echo2 "==>" "$@"        # AssetCmdShow "$@"
+    "$@" || DIE "command '$*' failed!"
 
-    SettleDown $arg
+    SettleDown "$arg"
 }
 AssetCmdLast() {
     local arg=""
@@ -2056,7 +2094,7 @@ ManualCheckOfAssets() {
             assets) what="assets in $tag" ;;
         esac
         echo2 ""
-        read2 -t $timeout -p "$what: Is $op OK (Y/n)? "
+        read2 -t "$timeout" -p "$what: Is $op OK (Y/n)? "
         case "$REPLY" in
             [yY]* | "") break ;;
             *) ;;
@@ -2097,7 +2135,7 @@ ManageGithubReleaseAssets() {
         # delete-release-assets does not need the whole file name, only unique start!
         assets+=("$REPONAME".{db,files})
 
-        if [ -n "$removableassets" ] ; then
+        if [ "${removableassets[0]}" ] ; then
             #AssetCmd delete-release-assets --quietly "$tag" "${removableassets[@]}"
             assets+=("${removableassets[@]}")
 
@@ -2123,16 +2161,18 @@ ManageGithubReleaseAssets() {
         if [ "$use_filelist" = "yes" ] ; then
             # create a list of package and db files that should be also on the mirror
             Pushd "$ASSETSDIR"
-            pkg="$(ls -1 *.pkg.tar.* "$REPONAME".{db,files}{,.tar.$REPO_COMPRESSOR}{,.sig} 2>/dev/null)"
+            pkg="$(ls -1 -- *.pkg.tar.* "$REPONAME".{db,files}{,.tar."$REPO_COMPRESSOR"}{,.sig} 2>/dev/null)"
             if [ -n "$filelist_txt" ] ; then
                 [ "$RELEASE_ASSETS_REMOTE_BASE" ] || DIE "RELEASE_ASSETS_REMOTE_BASE is not set in ${ASSETS_CONF}!"
+                # shellcheck disable=2001
                 echo "$pkg" | sed "s|^|$RELEASE_ASSETS_REMOTE_BASE/|" > "$filelist_txt"
             fi
+            # shellcheck disable=2164
             popd >/dev/null
         fi
 
         # transfer assets (built, signed and db) to github
-        if [ -n "$built" ] ; then
+        if [ "${built[0]}" ] ; then
             #AssetCmd add-release-assets "$tag" "${signed[@]}" "${built[@]}"
             assets+=("${built[@]}")
             if [ -r "$filelist_txt" ] ; then
@@ -2143,10 +2183,10 @@ ManageGithubReleaseAssets() {
 
         assets+=(
             "$REPONAME".{db,files}
-            "$REPONAME".{db,files}.tar.$REPO_COMPRESSOR
+            "$REPONAME".{db,files}.tar."$REPO_COMPRESSOR"
         )
         if [ $REPOSIG -eq 1 ] ; then
-            assets+=("$REPONAME".{db,files}.tar.$REPO_COMPRESSOR.sig)
+            assets+=("$REPONAME".{db,files}.tar."$REPO_COMPRESSOR".sig)
             assets+=("$REPONAME".{db,files}.sig)
         fi
         if [ -n "$built" ] ; then
@@ -2165,30 +2205,32 @@ ManageGithubReleaseAssets() {
 }
 
 ManageGithubNormalFiles() {
-    return    # no more needed !!?
-
-    case "$REPONAME" in
-        endeavouros) ;;
-        endeavouros-testing-dev) return ;;   # TODO: remove 'return' when the repo exists!
-        *) return ;;
-    esac
-
-    local workdir="$HOME/EOS/repo"
-    local targetdir="$workdir/$REPONAME"
-    local cp_output
-
-    test -d "$workdir"       || DIE "work folder $workdir does not exist."
-    test -d "$targetdir"     || DIE "target folder $targetdir does not exist."
-
-    Pushd "$workdir"
-    cp_output="$(cp -uv "$ASSETSDIR"/*.{db,files,zst,xz,sig} "$targetdir")"   # $asset_file_endings
-    Popd
-
-    if [ -n "$cp_output" ] ; then
-        echo2 "$cp_output"
-        printf2 "\nFiles were updated. Goto $workdir and transfer changes to github (with git commands).\n"
+    if true ; then
+        return    # ManageGithubNormalFiles no more needed !!?
     else
-        echo2 "Nothing more to do."
+        case "$REPONAME" in
+            endeavouros) ;;
+            endeavouros-testing-dev) return ;;   # TODO: remove 'return' when the repo exists!
+            *) return ;;
+        esac
+
+        local workdir="$HOME/EOS/repo"
+        local targetdir="$workdir/$REPONAME"
+        local cp_output
+
+        test -d "$workdir"       || DIE "work folder $workdir does not exist."
+        test -d "$targetdir"     || DIE "target folder $targetdir does not exist."
+
+        Pushd "$workdir"
+        cp_output="$(cp -uv "$ASSETSDIR"/*.{db,files,zst,xz,sig} "$targetdir")"   # $asset_file_endings
+        Popd
+
+        if [ -n "$cp_output" ] ; then
+            echo2 "$cp_output"
+            printf2 "\nFiles were updated. Goto $workdir and transfer changes to github (with git commands).\n"
+        else
+            echo2 "Nothing more to do."
+        fi
     fi
 }
 
@@ -2240,23 +2282,25 @@ Main() {
     [ -r $ASSETS_CONF ] || DIE "file '$PWD/$ASSETS_CONF' does not exist."
     [ -L .git ]         || DIE "$PWD/.git must be a symlink to the real .git!"
 
-    local _COMPRESSOR="$(grep "^PKGEXT=" /etc/makepkg.conf | tr -d "'" | sed 's|.*\.pkg\.tar\.||')"
-    local REPO_COMPRESSOR="$(AssetsConfLocalVal REPO_COMPRESSOR)"
+    local _COMPRESSOR REPO_COMPRESSOR
+    _COMPRESSOR="$(grep "^PKGEXT=" /etc/makepkg.conf | tr -d "'" | sed 's|.*\.pkg\.tar\.||')"
+    REPO_COMPRESSOR="$(AssetsConfLocalVal REPO_COMPRESSOR)"
 
     test -n "$REPO_COMPRESSOR" || REPO_COMPRESSOR=xz
 
-    if [ -z "$(grep ^PKGEXT /etc/makepkg.conf | grep zst)" ] ; then
+    if ! grep ^PKGEXT /etc/makepkg.conf | grep -q zst ; then
         echo2 "/etc/makepkg.conf: please use 'zst' in variable PKGEXT"
         fail=1
     fi
-    if [ -z "$(grep ^COMPRESSZST /etc/makepkg.conf | grep T0)" ] ; then
+    if ! grep ^COMPRESSZST /etc/makepkg.conf | grep -q T0 ; then
         echo2 "/etc/makepkg.conf: add -T0 -19 into variable COMPRESSZST"
         fail=1
     fi
     test $fail -eq 1 && return
 
     if false ; then
-        local _packager="$(AssetsConfLocalVal _PACKAGER)"
+        local _packager
+        _packager="$(AssetsConfLocalVal _PACKAGER)"
         if [ -n "$_packager" ] ; then
             export PACKAGER="$_packager"
         else
@@ -2282,7 +2326,7 @@ DebugBreak_not_used() {
     esac
 
     case "$DEBUG_BREAK" in
-        5) echo "Function '$FUNCNAME' <--- line ${BASH_LINENO[0]} function $from_function" ;;
+        5) echo "Function '${FUNCNAME[0]}' <--- line ${BASH_LINENO[0]} function $from_function" ;;
     esac
     :  # this is the break line
 }
