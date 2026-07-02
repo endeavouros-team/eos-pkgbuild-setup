@@ -498,36 +498,66 @@ AurSource() {
 
     /bin/curl --fail -Lsm 5 $url >/dev/null && _refvar=aur || _refvar=repo
 }
+
 FetchAurPkgs() {
     DebugBreak
-    local pkgs
+    local pkgs=()
     readarray -t pkgs < <(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
     if [ "${pkgs[0]}" ] ; then
+        local pkg
+        local check_maybe_needed=no
+        local fetch_result=ok
+
         rm -rf "${pkgs[@]}"
         AurSource aur_src
         case "$aur_src" in
             aur)
                 Color2 info; echo2 "  -> $helper -Ga ${pkgs[*]}"; Color2
-                $helper -Ga "${pkgs[@]}" &>/dev/null && return
+                $helper -Ga "${pkgs[@]}" &>/dev/null && check_maybe_needed=yes || fetch_result=fail
                 ;;
             repo)
                 Color2 info; echo2 "  -> aur-pkgs-fetch ${pkgs[*]}"; Color2
                 Color2 warning; echo2 "  -> please wait..."; Color2
-                aur-pkgs-fetch "${pkgs[@]}" && return
+                aur-pkgs-fetch "${pkgs[@]}" && check_maybe_needed=yes || fetch_result=fail
                 ;;
             local)
                 Color2 info; echo2 "  -> copy from '${AURSRCDIR/$HOME/\~}/$REPONAME'"; Color2
                 for pkg in "${pkgs[@]}" ; do
                     if [ -d "$AURSRCDIR/$REPONAME/$pkg" ] ; then
                         cp -r "$AURSRCDIR/$REPONAME/$pkg" ./
+                        check_maybe_needed=yes
                     else
                         WARN "folder '$AURSRCDIR/$REPONAME/$pkg' is not found!"
+                        fetch_result=fail
+                        break
                     fi
                 done
-                return
+                ;;
+            *)
+                DIE "unsupported AUR source '$aur_src'"
                 ;;
         esac
-        DIE "fetching ${pkgs[*]} failed."
+        if [ "$fetch_result" = fail ] ; then
+            DIE "fetching ${pkgs[*]} failed."
+        fi
+        if [ "$check_maybe_needed" = yes ] && [ "$AUR_PKG_CHECKING" = yes ] ; then
+            local Pkgver Pkgrel currver
+            for pkg in "${pkgs[@]}" ; do
+                Pushd "$pkg"
+                [ -e PKGBUILD ] || DIE "$pkg: no PKGBUILD!"
+                GetPkgbuildValue PKGBUILD Pkgver "pkgver" Pkgrel "pkgrel"
+                currver="$(expac -S %v "$pkg")"
+                [ "$currver" ] || DIE "$pkg: cannot determine current version!"
+                case "$(vercmp "${Pkgver}-${Pkgrel}" "$currver")" in
+                    1)  echo2 "==> $pkg: new version available. Running 'gitk':" 
+                        gitk
+                        ;;
+                    -1) WARN "$pkg: current version is newer than in AUR!" 
+                        ;;
+                esac
+                Popd
+            done
+        fi
     fi
 }
 

@@ -21,6 +21,7 @@ local USE_RELEASE_ASSETS="yes"                      # either 'release assets' or
 local RELEASE_ASSETS_REMOTE_BASE="https://github.com/endeavouros-team/repo/releases/download/endeavouros"   # download remote release asset files from here
 local PREFER_GIT_OVER_RELEASE=yes
 local ARCHIVE_TAG=packages
+local AUR_PKG_CHECKING=yes
 
 export MAKEPKG_CLEANUP=yes                          # some of *our* PKGBUILD files (e.g. yay) may use this!
 
