@@ -28,7 +28,9 @@ DIE() {
     Destructor
     exit 1
 }
-WARN()       { Color2 warning; echo2 -n "Warning: " ; echo2 "$@" ; Color2; }
+WARN()   { Color2 warning ; echo2 -n "Warning: " ; echo2 "$@" ; Color2; }
+INFO()   { Color2 info    ; echo2 -n "Info: "    ; echo2 "$@" ; Color2; }
+NOTE()   { Color2 tip     ; echo2 -n "Note: "    ; echo2 "$@" ; Color2; }
 
 _ASSERT_() {
     local ret=0
@@ -549,10 +551,10 @@ FetchAurPkgs() {
                 currver="$(expac -S %v "$pkg")"
                 [ "$currver" ] || DIE "$pkg: cannot determine current version!"
                 case "$(vercmp "${Pkgver}-${Pkgrel}" "$currver")" in
-                    1)  echo2 "==> $pkg: new version available. Running 'gitk':" 
+                    1)  INFO "'$pkg': new version available in AUR. Running 'gitk':" 
                         gitk
                         ;;
-                    -1) WARN "$pkg: current version is newer than in AUR!" 
+                    -1) NOTE "'$pkg': ${Pkgver}-${Pkgrel} (AUR) < $currver (local)!" 
                         ;;
                 esac
                 Popd
