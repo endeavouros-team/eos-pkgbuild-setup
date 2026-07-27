@@ -254,13 +254,13 @@ GetPkgbuildValue1() {
 IsListedPackage() {
     # Is a package one of the listed packages in PKGNAMES?
     local Pkgname="$1"
-    printf "%s\n" "${PKGNAMES[@]}" | grep -P "^$Pkgname/aur$|^$Pkgname$" >/dev/null
+    printf "%s\n" "${PKGNAMES[@]}" | grep -P "^$Pkgname$|^aur/$Pkgname$|^$Pkgname/aur$" >/dev/null
 }
 
 IsAurPackage() {
     # Determine AUR from PKGNAMES array directly since we don't have PKGBUILD yet.
     local Pkgname="$1"
-    printf "%s\n" "${PKGNAMES[@]}" | grep "^$Pkgname/aur$" >/dev/null
+    printf "%s\n" "${PKGNAMES[@]}" | grep -P "^aur/$Pkgname$|^$Pkgname/aur$" >/dev/null
 }
 
 HandlePossibleEpoch() {
@@ -435,10 +435,10 @@ LocalVersion()
     pkg-name-components --real EVR "$pkgs"
 }
 
-AurMarkingFail() {
-    local fakepath="$1"     # no more: "aur/pkgname"
-    DIE "marking AUR packages as $fakepath is no more supported!"
-}
+# AurMarkingFail() {
+#     local fakepath="$1"     # no more: "aur/pkgname"
+#     DIE "marking AUR packages as $fakepath is no more supported!"
+# }
 
 JustPkgname()
 {
@@ -446,7 +446,7 @@ JustPkgname()
     case "$fakepath" in
         ./*)      fakepath="${fakepath:2}" ;;
         */aur)    fakepath="${fakepath:: -4}" ;;
-        aur/*)    AurMarkingFail "$fakepath" ;;
+        aur/*)    fakepath="${fakepath:4}" ;;            # AurMarkingFail "$fakepath" ;;
         # *)      fakepath="${fakepath}"   ;;
     esac
     echoreturn "${fakepath##*/}"
@@ -504,7 +504,7 @@ AurSource() {
 FetchAurPkgs() {
     DebugBreak
     local pkgs=()
-    readarray -t pkgs < <(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep /aur | /bin/sed 's|/aur||')
+    readarray -t pkgs < <(printf "%s\n" "${PKGNAMES[@]}" | /bin/grep -P "aur/|/aur" | /bin/sed -e 's|aur/||' -e 's|/aur||')
     if [ "${pkgs[0]}" ] ; then
         local pkg
         local check_maybe_needed=no
@@ -575,7 +575,7 @@ ListNameToPkgName()
     # Supported syntax:
     #    pkgname          local package
     #    ./pkgname        local package (emphasis)
-    #    aur/pkgname      AUR package                           "aur/pkgname" NO MORE SUPPORTED!
+    #    aur/pkgname      AUR package
     #    pkgname/aur      AUR package  (another way)
 
     local xx="$1"
@@ -588,7 +588,7 @@ ListNameToPkgName()
 
     Pkgname=$(JustPkgname "$xx")
 
-    [ "${xx::4}" = "aur/" ] && AurMarkingFail "$xx"
+    # [ "${xx::4}" = "aur/" ] && AurMarkingFail "$xx"
 
     # if [ "${xx: -4}" = "/aur" ] ; then
     #     case "$run_hook" in
@@ -1627,7 +1627,7 @@ Main2() {
 
     declare -A ASSET_FAST_UPDATE_CHECKS=()
 
-    if false && [ $AUR_IS_AVAILABLE = yes ] && grep -E "^[ ]+[^ ]+/aur$" $ASSETS_CONF >/dev/null ; then
+    if false && [ $AUR_IS_AVAILABLE = yes ] && grep -E "^[ ]+[^ ]+/aur$|^[ ]+aur/[^ ]$" $ASSETS_CONF >/dev/null ; then
         echo2 -n "==> Checking AUR availability: "
         if is-aur-available --seconds=$aur_delay ; then
             echo2 success

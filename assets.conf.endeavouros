@@ -80,13 +80,16 @@ PKGNAMES=(                                        # Alphabetically ordered.
     eos-sddm-theme
     eos-settings-budgie
     eos-settings-cinnamon
+    eos-settings-cosmic
     eos-settings-gnome
     eos-settings-i3wm
     eos-settings-lxde
     eos-settings-lxqt
     eos-settings-mate
     eos-settings-plasma
+    eos-settings-sway
     eos-settings-xfce4
+    eos-sway-tools
     eos-translations
     eos-update
     eos-update-notifier
@@ -107,12 +110,12 @@ PKGNAMES=(                                        # Alphabetically ordered.
     # yad                                   # patch no more needed?
 )
 _PKGNAMES_FROM_AUR=(
-    bashdb/aur
-    downgrade/aur
-    paru/aur
-    yay/aur
-    zfs-dkms/aur
-    zfs-utils/aur
+    aur/bashdb
+    aur/downgrade
+    aur/paru
+    aur/yay
+    aur/zfs-dkms
+    aur/zfs-utils
 )
 PKGNAMES+=("${_PKGNAMES_FROM_AUR[@]}")
 
@@ -134,12 +137,10 @@ PKGNAMES+=("${_PKGNAMES_FROM_AUR[@]}")
 # Note: include the definition in quotes because of the pipe character '|'.
 #
 PKGNAMES_WAIT=(
-    # calamares                         # waiting Triton
-    # Waiting for Ganymede release:
-    # 'eos-breeze-sddm'
-    # 'eos-settings-plasma'
-    # 'endeavouros-branding'
-
+    calamares
+    eos-settings-cosmic
+    eos-settings-sway
+    eos-sway-tools
     # 'ckbcomp|1.233-1'     # in comparison to 1.228-1, this version has no changes to the 'ckbcomp' app
 
     # filesystem
