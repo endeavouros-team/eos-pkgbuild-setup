@@ -102,18 +102,20 @@ PKGNAMES=(                                        # Alphabetically ordered.
     nvidia-hook
     nvidia-inst
     pahis
+    paru
     qemu-arm-aarch64-static-bin
     rami
     reflector-bash-completion
     reflector-simple
     welcome
     # yad                                   # patch no more needed?
+    yay
 )
 _PKGNAMES_FROM_AUR=(
-    aur/bashdb
+    # aur/bashdb
     aur/downgrade
-    aur/paru
-    aur/yay
+    # aur/paru
+    # aur/yay
     aur/zfs-dkms
     aur/zfs-utils
 )
