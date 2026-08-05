@@ -217,7 +217,7 @@ GetPkgbuildValue1() {
                 # We want to run pkgver() to get the correct pkgver.
                 # But first we must run makepkg because the needed git stuff hasn't been fetched yet...
 
-                Pushd "${PKGBUILD%/*}"
+                [ -d "${PKGBUILD%/*}" ] && Pushd "${PKGBUILD%/*}"     # ???
 
                 makepkg --skipinteg -od &> /dev/null || DIE "${FUNCNAME[0]}: cannot determine 'pkgver' from $PKGBUILD."
 
@@ -236,7 +236,8 @@ GetPkgbuildValue1() {
                 fi
                 unset -f pkgver
 
-                Popd
+                [ -d "${PKGBUILD%/*}" ] && Popd    # ???
+
                 # shellcheck disable=2128
                 retval2="$(echo "$retvar" | tail -n1)"   # $retvar may have 2 items in 2 lines !?
                 [ -n "$retval2" ] && retvar="$retval2"
@@ -551,8 +552,8 @@ FetchAurPkgs() {
                 currver="$(expac -S %v "$pkg")"
                 [ "$currver" ] || DIE "$pkg: cannot determine current version!"
                 case "$(vercmp "${Pkgver}-${Pkgrel}" "$currver")" in
-                    1)  INFO "'$pkg': new version available in AUR. Running 'gitk':" 
-                        gitk
+                    1)  INFO "$pkg: new version available in AUR." 
+                        GitDiffs     #gitk
                         ;;
                     -1) NOTE "'$pkg': ${Pkgver}-${Pkgrel} (AUR) < $currver (local)!" 
                         ;;
@@ -562,6 +563,38 @@ FetchAurPkgs() {
         fi
     fi
 }
+
+
+GitDiff() {
+    # shows git diffs with the latest commit (HEAD-1 -> HEAD)
+    local file="$1"
+    local tool
+    echo2 "Latest commit diffs in $pkg/$file:"
+    for tool in meld kdiff3 ; do
+        if [ -x /bin/$tool ] ; then
+            git difftool --no-prompt --tool=$tool HEAD^ HEAD -- "$file"
+            return
+        fi
+    done
+    # fallback
+    git diff HEAD^ HEAD -- "$file" | sed 's|^|    |'
+}
+
+GitDiffs() {
+    local files=(PKGBUILD)
+    local file
+    local line
+    line=$(grep -m1 "^install=" PKGBUILD)     # PKGBUILD may contain "install=<script>"
+    if [ "$line" ] ; then
+        files+=("${line#install=}")
+    fi
+    INFO "Changes in build files of $pkg:"
+    printf2 "      %s\n" "${files[@]}"
+    for file in "${files[@]}" ; do
+        GitDiff "$file"
+    done
+}
+
 
 ListNameToPkgName()
 {
