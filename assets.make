@@ -31,6 +31,7 @@ DIE() {
 WARN()   { Color2 warning ; echo2 -n "Warning: " ; echo2 "$@" ; Color2; }
 INFO()   { Color2 info    ; echo2 -n "Info: "    ; echo2 "$@" ; Color2; }
 NOTE()   { Color2 tip     ; echo2 -n "Note: "    ; echo2 "$@" ; Color2; }
+SAFETYCHECK() { Color2 warning ; echo2 -n "Safety check: " ; echo2 "$@" ; Color2; }
 
 _ASSERT_() {
     local ret=0
@@ -553,7 +554,7 @@ FetchAurPkgs() {
                 [ "$currver" ] || DIE "$pkg: cannot determine current version!"
                 case "$(vercmp "${Pkgver}-${Pkgrel}" "$currver")" in
                     1)  INFO "$pkg: new version available in AUR." 
-                        GitDiffs     #gitk
+                        GitDiffs "$pkg"    #gitk
                         ;;
                     -1) NOTE "'$pkg': ${Pkgver}-${Pkgrel} (AUR) < $currver (local)!" 
                         ;;
@@ -563,7 +564,6 @@ FetchAurPkgs() {
         fi
     fi
 }
-
 
 GitDiff() {
     # shows git diffs with the latest commit (HEAD-1 -> HEAD)
@@ -581,20 +581,33 @@ GitDiff() {
 }
 
 GitDiffs() {
+    local pkg="$1"
     local files=(PKGBUILD)
     local file
-    local line
-    line=$(grep -m1 "^install=" PKGBUILD)     # PKGBUILD may contain "install=<script>"
-    if [ "$line" ] ; then
-        files+=("${line#install=}")
-    fi
+
+    AddFilesFromPkgbuild "${files[0]}"   # check PKGBUILD contents for interesting files
+
     INFO "Changes in build files of $pkg:"
     printf2 "      %s\n" "${files[@]}"
     for file in "${files[@]}" ; do
+        SAFETYCHECK "${FUNCNAME[0]}: $pkg: showing $file changes for a safety check"
         GitDiff "$file"
     done
 }
 
+AddFilesFromPkgbuild() {
+    # See if PKGBUILD includes other files that need checking.
+    # Currently only:
+    #   install=filename        (PKGBUILD may contain "install=<script>")
+    #
+    local Pkgbuild="$1"
+    local install_file
+    # shellcheck disable=1090
+    install_file=$(source "$Pkgbuild"; echo "$install")
+    if [ "$install_file" ] ; then
+        files+=("$install_file")
+    fi
+}
 
 ListNameToPkgName()
 {
