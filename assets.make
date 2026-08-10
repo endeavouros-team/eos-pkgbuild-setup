@@ -553,8 +553,8 @@ FetchAurPkgs() {
                 currver="$(expac -S %v "$pkg")"
                 [ "$currver" ] || DIE "$pkg: cannot determine current version!"
                 case "$(vercmp "${Pkgver}-${Pkgrel}" "$currver")" in
-                    1)  INFO "$pkg: new version available in AUR." 
-                        GitDiffs "$pkg"    #gitk
+                    1)  INFO "$pkg: new version available in AUR."
+                        gitk            # GitDiffs "$pkg"
                         ;;
                     -1) NOTE "'$pkg': ${Pkgver}-${Pkgrel} (AUR) < $currver (local)!" 
                         ;;
@@ -565,35 +565,35 @@ FetchAurPkgs() {
     fi
 }
 
-GitDiff() {
-    # shows git diffs with the latest commit (HEAD-1 -> HEAD)
-    local file="$1"
-    local tool
-    echo2 "Latest commit diffs in $pkg/$file:"
-    for tool in meld kdiff3 ; do
-        if [ -x /bin/$tool ] ; then
-            git difftool --no-prompt --tool=$tool HEAD^ HEAD -- "$file"
-            return
-        fi
-    done
-    # fallback
-    git diff HEAD^ HEAD -- "$file" | sed 's|^|    |'
-}
-
-GitDiffs() {
-    local pkg="$1"
-    local files=(PKGBUILD)
-    local file
-
-    AddFilesFromPkgbuild "${files[0]}"   # check PKGBUILD contents for interesting files
-
-    INFO "Changes in build files of $pkg:"
-    printf2 "      %s\n" "${files[@]}"
-    for file in "${files[@]}" ; do
-        SAFETYCHECK "${FUNCNAME[0]}: $pkg: showing $file changes for a safety check"
-        GitDiff "$file"
-    done
-}
+# GitDiff() {
+#     # shows git diffs with the latest commit (HEAD-1 -> HEAD)
+#     local file="$1"
+#     local tool
+#     echo2 "Latest commit diffs in $pkg/$file:"
+#     for tool in meld kdiff3 ; do
+#         if [ -x /bin/$tool ] ; then
+#             git difftool --no-prompt --tool=$tool HEAD^ HEAD -- "$file"
+#             return
+#         fi
+#     done
+#     # fallback
+#     git diff HEAD^ HEAD -- "$file" | sed 's|^|    |'
+# }
+#
+# GitDiffs() {
+#     local pkg="$1"
+#     local files=(PKGBUILD)
+#     local file
+#
+#     AddFilesFromPkgbuild "${files[0]}"   # check PKGBUILD contents for interesting files
+#
+#     INFO "Changes in build files of $pkg:"
+#     printf2 "      %s\n" "${files[@]}"
+#     for file in "${files[@]}" ; do
+#         SAFETYCHECK "${FUNCNAME[0]}: $pkg: showing $file changes for a safety check"
+#         GitDiff "$file"
+#     done
+# }
 
 AddFilesFromPkgbuild() {
     # See if PKGBUILD includes other files that need checking.
