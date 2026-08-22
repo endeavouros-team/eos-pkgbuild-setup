@@ -4,8 +4,6 @@
 #   - 2.12.2021:  update of multi-package PKGBUILD? Install should work, but deletion of old packages (thus updating) doesn't!
 #   - better epoch handling?
 
-source /etc/eos-color.conf
-
 Color2() { eos-color "$1" 2; }        # Color to stderr
 Color1() { eos-color "$1"; }          # Color to stdout
 
@@ -35,7 +33,7 @@ SAFETYCHECK() { Color2 warning ; echo2 -n "Safety check: " ; echo2 "$@" ; Color2
 
 _ASSERT_() {
     local ret=0
-    "$@" &> /dev/null || ret=$?
+    "$@" > /dev/null || ret=$?
     if [ $ret -ne 0 ] ; then
        echo2 "'$*' failed"
        exit $ret
@@ -545,18 +543,19 @@ FetchAurPkgs() {
             DIE "fetching ${pkgs[*]} failed."
         fi
         if [ "$check_maybe_needed" = yes ] && [ "$AUR_PKG_CHECKING" = yes ] ; then
-            local Pkgver Pkgrel currver
+            local Pkgver Pkgrel released_version
             for pkg in "${pkgs[@]}" ; do
                 Pushd "$pkg"
                 [ -e PKGBUILD ] || DIE "$pkg: no PKGBUILD!"
+                JustRunHook "$pkg"
                 GetPkgbuildValue PKGBUILD Pkgver "pkgver" Pkgrel "pkgrel"
-                currver="$(expac -S %v "$pkg")"
-                [ "$currver" ] || DIE "$pkg: cannot determine current version!"
-                case "$(vercmp "${Pkgver}-${Pkgrel}" "$currver")" in
+                released_version="$(expac -S %v "$pkg")"
+                [ "$released_version" ] || DIE "$pkg: cannot determine current version!"
+                case "$(vercmp "${Pkgver}-${Pkgrel}" "$released_version")" in
                     1)  INFO "$pkg: new version available in AUR."
                         gitk            # GitDiffs "$pkg"
                         ;;
-                    -1) NOTE "'$pkg': ${Pkgver}-${Pkgrel} (AUR) < $currver (local)!" 
+                    -1) NOTE "'$pkg': ${Pkgver}-${Pkgrel} (AUR) < $released_version (local)!" 
                         ;;
                 esac
                 Popd
@@ -595,19 +594,32 @@ FetchAurPkgs() {
 #     done
 # }
 
-AddFilesFromPkgbuild() {
-    # See if PKGBUILD includes other files that need checking.
-    # Currently only:
-    #   install=filename        (PKGBUILD may contain "install=<script>")
-    #
-    local Pkgbuild="$1"
-    local install_file
-    # shellcheck disable=1090
-    install_file=$(source "$Pkgbuild"; echo "$install")
-    if [ "$install_file" ] ; then
-        files+=("$install_file")
-    fi
-}
+# GetPkgbuildFieldValue() {
+#     local PKGBUILD="$1"              # path to the PKGBUILD file
+#     local Fieldname="$2"             # name of the variable that we are interested in
+#     local -n __value__="$3"          # returned value for the $Fieldname in the PKGBUILD
+#
+#     # shellcheck disable=1090
+#     __value__="$(source "$PKGBUILD"; echo "${!Fieldname}")"
+# }
+
+# AddFilesFromPkgbuild() {
+#     # See if PKGBUILD includes other files that need checking.
+#     # Currently only:
+#     #   install=filename        (PKGBUILD may contain "install=<script>")
+#     #
+#     local Pkgbuild="$1"
+#     local install_file
+#     if false ; then
+#         # shellcheck disable=1090
+#         install_file=$(source "$Pkgbuild"; echo "$install")
+#     else
+#         install_file=$(ShowPkgbuildValue install)       # GetPkgbuildFieldValue "$Pkgbuild" "install" "install_file"
+#     fi
+#     if [ "$install_file" ] ; then
+#         files+=("$install_file")
+#     fi
+# }
 
 ListNameToPkgName()
 {
@@ -664,6 +676,14 @@ ListNameToPkgName()
 
     pkgdirname="$Pkgname"
     return $hookretval
+}
+
+JustRunHook() {
+    local Pkgname="$1"
+    local hook="${ASSET_PACKAGE_HOOKS[$Pkgname]}"
+    if [ "$hook" ] ; then
+        $hook
+    fi
 }
 
 Compare() {
@@ -1742,7 +1762,7 @@ Main2() {
     local hookout=""
     local -r WARNING="$(Color1 warning)WARNING$(Color1)"
     local -r OK="$(Color1 ok)OK$(Color1)"
-    local -r WAITING="$(Color1 info)UPDATE WAIT$(Color1)"
+    local -r WAITING="$(Color1 info)UPDATE POSTPONED$(Color1)"
     local -r IN_WAIT_LIST="$(Color1 info)also in wait list$(Color1)"
     local -r CHANGED="$(Color1 warning)CHANGED$(Color1)"
     local ret=""
@@ -2410,5 +2430,7 @@ DebugBreak_not_used() {
 }
 
 DebugBreak() { : ; }
+
+source /etc/eos-color.conf
 
 Main "$@"

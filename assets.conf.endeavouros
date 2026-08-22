@@ -53,6 +53,7 @@ PKGNAMES=(                                        # Alphabetically ordered.
     # arc-gtk-theme-eos  # arc-gtk-theme moved to AUR !!
     calamares
     ckbcomp
+    downgrade
     dracut                                  # added 15.8.2025 (version 108_eos-1)
     endeavouros-branding
     endeavouros-keyring
@@ -113,11 +114,11 @@ PKGNAMES=(                                        # Alphabetically ordered.
 )
 _PKGNAMES_FROM_AUR=(
     # aur/bashdb
-    aur/downgrade
+    # aur/downgrade
     # aur/paru
     # aur/yay
-    aur/zfs-dkms
-    aur/zfs-utils
+    # aur/zfs-dkms
+    # aur/zfs-utils
 )
 PKGNAMES+=("${_PKGNAMES_FROM_AUR[@]}")
 
