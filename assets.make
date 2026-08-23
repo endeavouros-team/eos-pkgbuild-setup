@@ -662,6 +662,7 @@ ListNameToPkgName()
     hook="${ASSET_PACKAGE_HOOKS[$Pkgname]}"
     if [ -n "$hook" ] ; then
         if [ "$run_hook" = "yes" ] ; then
+            DebugBreakHook
             hookout=$($hook) || hookretval=$?
             case $hookretval in
                 0) HookIndicator "$hook_yes" ;;          # OK
@@ -2429,7 +2430,8 @@ DebugBreak_not_used() {
     :  # this is the break line
 }
 
-DebugBreak() { : ; }
+DebugBreak()     { : ; }
+DebugBreakHook() { : ; }
 
 source /etc/eos-color.conf
 

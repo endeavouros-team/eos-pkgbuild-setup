@@ -474,6 +474,14 @@ _inxi_hook_check_latest() {
     fi
 }
 
+PickPkgbuildValue() {
+    local PkgbuildDir="$1"
+    local itemname="$2"
+    pushd "$PkgbuildDir" >/dev/null
+    ShowPkgbuildValue "$itemname"
+    popd >/dev/null
+}
+
 _downgrade_hook_check_latest() {
     # check if AUR PKGBUILD has the latest version of downgrade from the developer
     local tool=downgrade
@@ -482,16 +490,34 @@ _downgrade_hook_check_latest() {
     local Pkgbuild="$PKGBUILD_ROOTDIR"/$tool/PKGBUILD
     local localversion=$(_Get_pkgver "$Pkgbuild")
     local dev_version
+    local Pkgrel
 
-    tmpdata="$(_fetch_that_file - $url)"
-    if [ $? -ne 0 ] ; then
+    Pkgrel=$(PickPkgbuildValue "$PKGBUILD_ROOTDIR/$tool" pkgrel)
+
+    local AUR_version
+    AUR_version=$(LANG=C yay --aur -Si downgrade | grep ^Version | awk '{print $NF}')
+
+    if [ "${localversion}-$Pkgrel" != "$AUR_version" ] ; then
+        _aur_show_version
+    fi
+
+    tmpdata=$(curl -Lsm 10 "$url") || {
         echo "cannot fetch info about $tool" >&2
         return 1
-    fi
-    dev_version="$(echo "$tmpdata" | grep /pbrisbin/downgrade/releases/tag/v | head -n 1 | sed 's|^.*/tag/v\([0-9\.]*\).*$|\1|')"
+    }
+    dev_version="$(echo "$tmpdata" | grep -Pm1 'title="v[^"]+"')"
+    dev_version="$(echo "$dev_version" | sed -E -e 's|.*title="v||' -e 's|([^"]+)".*|\1|')"
 
     _common_show_version
 }
+
+
+_aur_show_version() {
+    if [ "$localversion" != "$AUR_version" ] ; then
+        echo -n "[AUR=$AUR_version] " >&2
+    fi
+}
+
 
 _kalu_hook_fix_files() {
     # fix kalu.install
@@ -682,12 +708,12 @@ ASSET_FAST_UPDATE_CHECKS=(
 
 declare -A ASSET_PACKAGE_HOOKS=(
     assets_mirrors         _assets_download_break                            # special hook
+    downgrade              _downgrade_hook_check_latest
     dracut                 _dracut_hook                                      # Inform if the Arch version if not older than the EndeavourOS version
     yad                    _yad_hook
 
     # bashdb                 _bashdb_hook                                    # no more needed
     # budgie-control-center  _budgie-control-center_hook
-    # downgrade              _downgrade_hook_check_latest
     # eos-lightdm-gtk-theme  _eos-lightdm-gtk-theme_hook                     # Clone package source of eos-lightdm-gtk-theme from EndeavourOS ARM
     # inxi                   _inxi_hook_check_latest
     # kalu                   _kalu_hook_fix_files

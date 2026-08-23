@@ -1,0 +1,55 @@
+#!/bin/bash
+
+DIE()  { echo "==> $progname: error: $1" >&2; exit 1; }
+WARN() { echo "==> $progname: warning: $1" >&2; }
+
+ShowValue()  {
+    case "$varcount" in
+        0) ;;
+        1) printf "%s\n" "$@" ;;
+        *) echo "$VAR:"; printf "    %s\n" "$@" ;;
+    esac
+}
+
+GetPkgbuildFieldValue() {
+    local -r progname=${0##*/}
+    local VAR VARS=("$@")
+    varcount=${#VARS[@]}
+
+    source ./PKGBUILD || DIE "$PWD/PKGBUILD not found."
+
+    for VAR in "$@" ; do
+        # shellcheck disable=2154
+        case "$VAR" in                                          # Note: only a subset of PKGBUILD variables are handled below.
+            arch)            ShowValue "${arch[@]}" ;;
+            backup)          ShowValue "${backup[@]}" ;;
+            conflicts)       ShowValue "${conflicts[@]}" ;;
+            depends)         ShowValue "${depends[@]}" ;;
+            license)         ShowValue "${license[@]}" ;;
+            makedepends)     ShowValue "${makedepends[@]}" ;;
+            optdepends)      ShowValue "${optdepends[@]}" ;;
+            options)         ShowValue "${options[@]}" ;;
+            pkgname)         ShowValue "${pkgname[@]}" ;;
+            provides)        ShowValue "${provides[@]}" ;;
+            replaces)        ShowValue "${replaces[@]}" ;;
+            sha256sums)      ShowValue "${sha256sums[@]}" ;;
+            source)          ShowValue "${source[@]}" ;;
+            validpgpkeys)    ShowValue "${validpgpkeys[@]}" ;;
+
+            epoch)           ShowValue "$epoch" ;;
+            install)         ShowValue "$install" ;;
+            pkgdesc)         ShowValue "$pkgdesc" ;;
+            pkgrel)          ShowValue "$pkgrel" ;;
+            url)             ShowValue "$url" ;;
+            pkgver)          declare -F "$2" &>/dev/null && pkgver=$(pkgver)
+                             ShowValue "$pkgver"
+                             ;;
+            _ver)            ShowValue "$_ver" ;;                             # maybe not needed; not from 'man PKGBUILD' ...
+            *)               WARN "variable name '$VAR' is not supported"
+                             ;;
+        esac
+    done
+}
+
+# Parameters: field-name(s)
+GetPkgbuildFieldValue "$@"
