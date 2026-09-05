@@ -1,0 +1,31 @@
+# bash completion for ShowPkgbuildValue        -*- shell-script -*-
+
+_ShowPkgbuildValue_complete() {
+    compopt -o nosort
+    # COMPREPLY=( $(compgen -W "$1" -- "$cur") )
+    readarray -t COMPREPLY < <(compgen -W "$1" -- "$cur")
+    [[ ${COMPREPLY[0]} == *= ]] && compopt -o nospace
+}
+
+_ShowPkgbuildValue_() {
+    local cur prev #words cword split
+    _init_completion -s || return
+
+    # Handle options that need sub-options.
+    # Each option "case" should return immediately.
+
+    case "$prev" in
+        --combined)
+            _ShowPkgbuildValue_complete "$(ShowPkgbuildValue --list-supported-names)"
+            ;;
+        *)
+            # Handle top-level options.
+            case "$cur" in
+                *)  # A non-option parameter given.
+                    _ShowPkgbuildValue_complete "$(ShowPkgbuildValue --options) $(ShowPkgbuildValue --list-supported-names)"
+                    ;;
+            esac
+            ;;
+    esac
+} &&
+complete -F _ShowPkgbuildValue_ ShowPkgbuildValue

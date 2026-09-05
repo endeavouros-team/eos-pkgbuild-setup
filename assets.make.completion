@@ -1,5 +1,24 @@
 # bash completion for assets.make        -*- shell-script -*-
 
+_assets_make_listselector()
+{
+    local cur="$1"
+    local list_elems_all="$2"
+
+    local realcur="${cur##*,}"
+    local prefix="${cur%$realcur}"
+    local elems word
+
+    for word in $list_elems_all
+    do
+        if ! [[ $prefix == *"$word"* ]]; then
+            elems="$word $elems"
+        fi
+    done
+    COMPREPLY=( $(compgen -P "$prefix" -W "$elems" -S ',' -- $realcur) )
+    compopt -o nospace
+}
+
 _assets_make_complete_simple() {
     COMPREPLY=($(compgen -W "$1" -- "$cur"))
     [[ $COMPREPLY == *= ]] && compopt -o nospace
@@ -22,6 +41,9 @@ _assets_make_() {
     case "$prev" in
         --fetch-timeout)
             _assets_make_complete_open -P "$cur" -W "{0..9}"
+            ;;
+        --pkgnames)
+            _assets_make_listselector "$cur" "$(pacman -Slq endeavouros)"
             ;;
         *)
             # Handle all top-level parameters.

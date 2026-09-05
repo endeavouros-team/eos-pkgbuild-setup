@@ -5,11 +5,11 @@
 # Note: this file will be sourced into a function,
 # so all variables are made 'local'.
 
+# shellcheck disable=2168,2034,2190
+
 local REPONAME="endeavouros"
 local RELEASE_TAGS=(
     endeavouros
-    # mirror1
-    # mirror2
 )
 
 ## user to sign packages
@@ -26,18 +26,10 @@ local AUR_PKG_CHECKING=yes
 export MAKEPKG_CLEANUP=yes                          # some of *our* PKGBUILD files (e.g. yay) may use this!
 
 ## local folders
-# local ASSETSDIR="$PWD"
-# local PKGBUILD_ROOTDIR="$ASSETSDIR/PKGBUILDS"       # temporary copy only, will always be overwritten
-# local GITDIR="$ASSETSDIR/../../repo"                # not $REPONAME...
-# local ARCHIVE_GIT="$ASSETSDIR/../../archive/.git"
-
-## new way with absolute paths:
 local ASSETSDIR="$EOS_ROOT/_BUILD_/$REPONAME"
 local PKGBUILD_ROOTDIR="$ASSETSDIR/PKGBUILDS"
 local GITDIR="$EOS_ROOT/repo"
 local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
-
-# source EndeavourOS-packages-buildlist || exit 1
 
 # PKGNAMES is the current build list for the packages at the [endeavouros] repository.
 #
@@ -45,12 +37,8 @@ local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 # - The AUR package names require suffix "/aur".
 # - The EndeavourOS names are actually folder names for packages under PKGBUILDS, not actual package names!
 #
-
-# PKG_CHANGELOGS moved to eos-pkg-changelog.
-
 PKGNAMES=(                                        # Alphabetically ordered.
     akm
-    # arc-gtk-theme-eos  # arc-gtk-theme moved to AUR !!
     calamares
     ckbcomp
     downgrade
@@ -112,20 +100,11 @@ PKGNAMES=(                                        # Alphabetically ordered.
     # yad                                   # patch no more needed?
     yay
 )
-_PKGNAMES_FROM_AUR=(
-    # aur/bashdb
-    # aur/downgrade
-    # aur/paru
-    # aur/yay
-    # aur/zfs-dkms
-    # aur/zfs-utils
-)
+_PKGNAMES_FROM_AUR=()
+
 PKGNAMES+=("${_PKGNAMES_FROM_AUR[@]}")
 
-# PKGNAMES=( ckbcomp )
-
-# Use option --pkgnames="names" for special checks!
-
+# Use option --pkgnames for special checks! For example: assets.make -n --pkgnames=akm,welcome
 
 # PKGNAMES_WAIT specifies which of the packages in PKGNAMES will not be built.
 # Formats supported:
@@ -150,14 +129,6 @@ PKGNAMES_WAIT=(
     # lsb-release
 )
 
-
-
-# HAS_GIT_VER array incldues packages whose pkgver can be anything, i.e. newer package can have lower pkgver.
-# Sometimes e.g. -git packages have that property.
-# declare -A HAS_GIT_PKGVER            # allow any pkgver value if "yes"
-# HAS_GIT_PKGVER[???-git]=yes
-
-
 declare -A PKG_MAKEPKG_OPTIONS=(
     eos-dracut                 "--nodeps"
     eos-lightdm-slick-theme    "--nodeps"
@@ -168,9 +139,6 @@ declare -A PKG_MAKEPKG_OPTIONS=(
     yay                        "--rmdeps"
 
     # calamares                  "--nodeps"
-    # endeavouros-skel-i3wm      "--nodeps"
-    # endeavouros-skel-xfce4     "--nodeps"
-    # worm                       "--rmdeps"
 )
 
 # Hook functions are run in the beginning after RationalityTests in assets.make.
@@ -181,17 +149,12 @@ local ASSET_HOOKS=(
 
 # Package hooks
 
-# do this for: icon-themes?
+# Useful functions
 
 _common_show_version() {
     if [ "$localversion" != "$dev_version" ] ; then
         echo -n "[dev=$dev_version] " >&2
     fi
-}
-
-_Updpkgsums() {
-    local Pkgbuild="$1"
-    updpkgsums "$Pkgbuild" 2>/dev/null
 }
 
 _Get_pkgver() {
@@ -202,12 +165,6 @@ _Get_pkgver() {
     echo "$Pkgver"
 }
 
-#_GetSource0() {
-#    local Pkgbuild="$1"
-#    source "$Pkgbuild"
-#    echo "${source[0]}"
-#}
-
 _fetch_that_file() {
     local file="$1"
     local url="$2"
@@ -216,9 +173,9 @@ _fetch_that_file() {
     [ -n "$url" ] || return 1
 
     if false ; then
-        local out=""
-        [ "$file" != "-" ] && out="--output '$file'"
-        curl --silent --location --max-time 10 $out "$url"
+        local out=()
+        [ "$file" != "-" ] && out=(--output "$file")
+        curl --silent --location --max-time 10 "${out[@]}" "$url"
     else
         wget -q --timeout=10 -O"$file" "$url"
     fi
@@ -241,48 +198,31 @@ InstallNeededPackages() {
     fi
 }
 
-_budgie-control-center_hook() {
-    local pkgs=(
-        modemmanager
-        # gnome-online-accounts
-        # gsound
-        budgie-desktop
-        # libcheese
-        # colord-gtk
-    )
-
-    InstallNeededPackages "${pkgs[@]}"
-}
-
-
 
 # 2022-Feb-19: added temporary hooks for *-bin ==> non-bin, remove e.g. 2 months after both packages have updated ??
 
-_rate-mirrors_hook() {
-    local PKGBUILD="$PKGBUILD_ROOTDIR"/"$(__generic_get_pkgname $FUNCNAME)"/PKGBUILD
-    sed -i $PKGBUILD \
-        -e "/^depends=/a \ \nreplaces=(rate-mirrors-bin)"
-}
-
 _dracut_hook() {
     # Inform if the Arch version if not older than the EndeavourOS version
-    local pkg=$(__generic_get_pkgname $FUNCNAME)
+    local pkg
+    pkg=$(__generic_get_pkgname "${FUNCNAME[0]}")
     local PKGBUILD="$PKGBUILD_ROOTDIR/$pkg/PKGBUILD"
     local eos_pkgver=""
     local eos_pkgrel=""
     GetPkgbuildValue "$PKGBUILD" eos_pkgver "pkgver" eos_pkgrel "pkgrel"
-    local extra_ver=$(expac -S %v extra/$pkg)
-    local eos_ver=${eos_pkgver}-$eos_pkgrel
+    local extra_ver eos_ver
+    extra_ver=$(expac -S %v "extra/$pkg")
+    eos_ver="${eos_pkgver}-$eos_pkgrel"
 
-    if [ $(vercmp $extra_ver $eos_ver) -ge 0 ] ; then
+    if [ "$(vercmp "$extra_ver" "$eos_ver")" -ge 0 ] ; then
 	Color2 info
-        echo2 -n "[info: $FUNCNAME: extra/$pkg $extra_ver > endeavouros/$eos_ver] "
+        echo2 -n "[info: ${FUNCNAME[0]}: extra/$pkg $extra_ver > endeavouros/$eos_ver] "
 	Color2 reset
     fi
 }
 
 _paru_hook() {
-    local PKGBUILD="$PKGBUILD_ROOTDIR"/"$(__generic_get_pkgname $FUNCNAME)"/PKGBUILD
+    local PKGBUILD
+    PKGBUILD="$PKGBUILD_ROOTDIR"/"$(__generic_get_pkgname "${FUNCNAME[0]}")"/PKGBUILD
     local Pkgver=""   # =$(grep ^pkgver= "$PKGBUILD" | cut -d'=' -f2)
     local Pkgrel=""   # =$(grep ^pkgrel= "$PKGBUILD" | cut -d'=' -f2)
 
@@ -290,18 +230,6 @@ _paru_hook() {
     GetPkgbuildValue "$PKGBUILD" Pkgrel "pkgrel"
 
     case "${Pkgver}-$Pkgrel" in
-         1.11.1-1)
-             sed -i "$PKGBUILD" \
-                 -e 's|^pkgver=.*|pkgver=1.11.2|' \
-                 -e "s|^sha256sums=.*|sha256sums=('9fd8db52894f9e7d61a3901d2c441502aab28a090083e0d6fdb58118e53a8a14')|"
-             ;;
-         2.0.3-1)
-             sed -i "$PKGBUILD" \
-                 -e 's|^pkgrel=.*|pkgrel=1.1|' \
-                 -e 's|^source=.*|source=("$pkgname-$pkgver::git+https://github.com/Morganamilo/paru.git#commit=90656a9")|' \
-                 -e "s|^depends=.*|depends=(git pacman 'libalpm.so=15')|" \
-                 -e "s|^sha256sums=.*|sha256sums=('b1385075347c3ec2c4dda8055fd74cb9106ea5e2ee92d76a56a9c7707932221f')|"
-             ;;
 	 2.1.0-2)
              sed -i "$PKGBUILD" \
                  -e 's|^pkgrel=2|pkgrel=2.1|'
@@ -309,177 +237,12 @@ _paru_hook() {
     esac
 }
 
-_eos-lightdm-gtk-theme_hook() {
-    # Clone package source of eos-lightdm-gtk-theme from EndeavourOS ARM
-
-    local Pkgname="$(__generic_get_pkgname $FUNCNAME)"
-
-    pushd /tmp >/dev/null || return 1
-    rm -rf PKGBUILDS
-    git clone https://github.com/endeavouros-arm/PKGBUILDS.git >& /dev/null || return 1   # Get all from EOS ARM.
-    [ -d "$PKGBUILD_ROOTDIR"/$Pkgname ] && rm -rf "$PKGBUILD_ROOTDIR"/$Pkgname            # Replace old local eos-lightdm-gtk-theme dir
-    mv PKGBUILDS/$Pkgname "$PKGBUILD_ROOTDIR"/ || return 1                                # with the new eos-lightdm-gtk-theme dir.
-    popd >/dev/null
-    rm -rf /tmp/PKGBUILDS                                                                 # clean up
-}
-
-_bashdb_hook() {
-    local Pkgname="$(__generic_get_pkgname $FUNCNAME)"
-    local Pkgbuild="$PKGBUILD_ROOTDIR"/$Pkgname/PKGBUILD
-    local VER=""
-    local PKGREL=""
-
-    GetPkgbuildValue "$Pkgbuild" VER "_ver"
-
-    # if [ "$(grep "^_ver=" "$Pkgbuild" | cut -d'=' -f2)" = "'5.0-1.1.2'" ] ; then
-    if [ "$VER" = "5.0-1.1.2" ] ; then
-        # support also bash version 5.1
-
-        local line="s/'5.0')/'5.0' | '5.1')/"
-
-        sed -i "$Pkgbuild" \
-            -e "/^[ ]*#sed /a \  sed -i configure -e \"$line\""
-
-        # show in pkgrel we changed this package
-        GetPkgbuildValue "$Pkgbuild" PKGREL "pkgrel"
-        # if [ "$(grep ^pkgrel= "$Pkgbuild" | cut -d'=' -f2)" = "'1'" ] ; then
-        if [ "$PKGREL" = "1" ] ; then
-            sed -i "$Pkgbuild" \
-                -e 's|^pkgrel=.*|pkgrel=1.1|'
-        fi
-    fi
-}
-
-_paper-icon-theme-git_hook() {
-    local Pkgname="$(__generic_get_pkgname $FUNCNAME)"
-    local Pkgbuild="$PKGBUILD_ROOTDIR"/$Pkgname/PKGBUILD
-    local cleanup=""
-    local commits commit
-    local data=$(curl -s https://github.com/snwh/paper-icon-theme)
-
-    commits=$(echo "$data" | grep -B2 " commits$"   | head -n1 | sed 's|[ ]*<strong>\([0-9]*\)</strong>$|\1|')  # 832
-    commit=$( echo "$data" | grep ">Permalink<" | sed 's|.*/tree/\([0-9a-f]*\)".*|\1|')                         # aa3e8af7a1f0831a51fd7e638a4acb077a1e5188
-    commit=${commit::7}                                                                                         # aa3e8af
-
-    cleanup+='    local dir="$srcdir/../$pkgname"\n'
-    cleanup+='    [ -d "$dir" ] && rm -rf "$dir"'
-
-    # Changes:
-    # - remove reference to $srcdir
-    # - get pkgver from github info
-    # - remove pkgver()
-    # - conflicts with paper-icon-theme
-    # - add some cleanup
-
-    sed -i "$Pkgbuild" \
-        -e 's|^pkgname=.*|pkgname=paper-icon-theme|' \
-        -e 's|cd "$srcdir/$pkgname"$|cd "$pkgname"|' \
-        -e "s|^pkgver=.*|pkgver=1.5.0.$commits.$commit|" \
-        -e 's|^pkgver()|_pkgver_not_used()|' \
-        -e "/^provides=(/a \conflicts=(paper-icon-theme)" \
-        -e "/ ninja -C /a \    # cleanup\n$cleanup"
-
-    return 11  # pkgver was changed
-}
-
-_yay_hook_check_latest() {
-    # check if AUR PKGBUILD has the latest version of yay from the developer
-    local tool=yay
-    local url=https://github.com/Jguer/$tool/releases
-    local tmpdata
-    local Pkgbuild="$PKGBUILD_ROOTDIR"/$tool/PKGBUILD
-    local localversion=$(_Get_pkgver "$Pkgbuild")
-    local dev_version
-
-    tmpdata="$(_fetch_that_file "-" $url)"
-    if [ $? -ne 0 ] ; then
-        echo "cannot fetch info about $tool" >&2
-        return 1
-    fi
-    dev_version="$(echo "$tmpdata" | grep -m1 /Jguer/yay/tree/v | sed 's|^.*/tree/v\([0-9\.]*\)" .*$|\1|')"
-
-    _common_show_version
-}
-
-_yay_hook_check_latest_old() {
-    # check if AUR PKGBUILD has the latest version of yay from the developer
-    local tool=yay
-    local url=https://github.com/Jguer/$tool/releases
-    local tmpfile=$(mktemp)
-    local Pkgbuild="$PKGBUILD_ROOTDIR"/$tool/PKGBUILD
-    local localversion=$(_Get_pkgver "$Pkgbuild")
-    local dev_version
-
-    _fetch_that_file $tmpfile $url || {
-        echo "cannot fetch info about $tool" >&2
-        rm -f $tmpfile
-        return 1
-    }
-    #dev_version="$(grep "Release v[0-9]" $tmpfile | sed 's|^.*Release v\([0-9\.]*\).*$|\1|')"
-    dev_version="$(grep /Jguer/yay/tree/v $tmpfile | head -n 1 | sed 's|^.*/tree/v\([0-9\.]*\)" .*$|\1|')"
-
-    _common_show_version
-    rm -f $tmpfile
-}
-
-_nvidia-installer-db_hook() {
-    # nvidia-site-check-and-update-db
-    return
-
-    # check if Nvidia has changed its driver archive (db) site
-    local archive=https://www.nvidia.com/en-us/drivers/unix
-    local store="$HOME"/.nvidia-installer/archive.html
-    mkdir -p "$(dirname "$store")"
-    local tmpfile="$(mktemp "$store".tmp.XXXXX)"
-
-    _fetch_that_file "$tmpfile" $archive || {
-        rm -f "$tmpfile"
-        return 1
-    }
-    if (diff "$tmpfile" "$store" >& /dev/null) ; then
-        rm -f "$store".tmp.*  # no diffs
-    else
-        mv "$store" "$store".tmp
-        mv "$tmpfile" "$store"
-        mv "$store".tmp "$tmpfile"
-        printf "$archive changed! Run nvidia-installer-check to see if there's a problem. " >&2
-    fi
-}
-
-_inxi_hook_check_latest() {
-    # check if AUR PKGBUILD has the latest version of inxi from the developer
-    local tool=inxi
-    local url=https://github.com/smxi/$tool/releases
-    local tmpdata
-    local Pkgbuild="$PKGBUILD_ROOTDIR"/$tool/PKGBUILD
-    local localversion=$(_Get_pkgver "$Pkgbuild")
-    local dev_version
-    local prefer_dev_version=yes
-
-    tmpdata="$(_fetch_that_file - $url)"
-    if [ $? -ne 0 ] ; then
-        echo "cannot fetch info about $tool" >&2
-        return 1
-    fi
-    # Inxi has a version number "conflicting" with Arch versioning. Have to change inxi's '-' to '.'.
-    dev_version="$(echo "$tmpdata" | grep /smxi/inxi/releases/tag/ | head -n 1 | sed -e 's|^.*/tag/||' -e 's|".*$||' | tr '-' '.')"
-
-    if [ "$prefer_dev_version" = "yes" ] ; then
-        sed -i $Pkgbuild -e 's|^pkgver='"$localversion"'$|pkgver='"$dev_version"'|'
-        # echo -n "#" >&2
-        _Updpkgsums "$Pkgbuild"
-        return 11  # pkgver was changed
-    else
-        _common_show_version
-    fi
-}
-
 PickPkgbuildValue() {
     local PkgbuildDir="$1"
     local itemname="$2"
-    pushd "$PkgbuildDir" >/dev/null
+    pushd "$PkgbuildDir" >/dev/null || return 1
     ShowPkgbuildValue "$itemname"
-    popd >/dev/null
+    popd >/dev/null || return 1
 }
 
 _downgrade_hook_check_latest() {
@@ -488,7 +251,8 @@ _downgrade_hook_check_latest() {
     local url=https://github.com/pbrisbin/$tool/releases
     local tmpdata
     local Pkgbuild="$PKGBUILD_ROOTDIR"/$tool/PKGBUILD
-    local localversion=$(_Get_pkgver "$Pkgbuild")
+    local localversion
+    localversion=$(_Get_pkgver "$Pkgbuild")
     local dev_version
     local Pkgrel
 
@@ -519,61 +283,10 @@ _aur_show_version() {
 }
 
 
-_kalu_hook_fix_files() {
-    # fix kalu.install
-    sed -i "$PKGBUILD_ROOTDIR"/kalu/kalu.install \
-        -e 's| usr/sbin/|/usr/sbin/|'
-
-    # use names instead of numbers in "chown" command
-    sed -i "$PKGBUILD_ROOTDIR"/kalu/PKGBUILD \
-        -e 's|chown 0:102|chown root:polkitd|' \
-        -e 's|^\(pkgrel=[0-9]*\)$|\1.1|'
-}
-
 
 
 
 # Common helper functions.
-
-_helper_get_files_from_Arch() {
-    local PKGNAME="$1"             # must include "repo/" prefix, e.g. "extra/yad"
-
-    case "$PKGNAME" in
-        */*) ;;
-        *) return 1 ;;
-    esac
-
-    local tmpdir=$(mktemp -d)
-    pushd $tmpdir >/dev/null
-    yay -G $PKGNAME || return 1
-    popd >/dev/null
-    mv $tmpdir/$PKGNAME/trunk/* . || return 1
-    rm -rf $tmpdir
-}
-_helper_compare_pkg_version_info() {
-    # Compare pkgver and pkgrel of Arch and EOS PKGBUILDs.
-    # If changed, manual intervention is needed: simply update PKGBUILD in EOS with new from Arch.
-
-    local PKGNAME="$1"
-
-    local -r ver1="$(grep "^pkgver=" PKGBUILD)"
-    local -r rel1="$(grep "^pkgrel=" PKGBUILD        | sed 's|\.1$||')"
-    local -r ver2="$(grep "^pkgver=" PKGBUILD.eos)"
-    local -r rel2="$(grep "^pkgrel=" PKGBUILD.eos    | sed 's|\.1$||')"
-    [ "$ver1" = "$ver2" ] || { echo "NOTE: $PKGNAME PKGBUILD (pkgver) has changed, manual intervention needed!" >&2; return 1; }
-    [ "$rel1" = "$rel2" ] || { echo "NOTE: $PKGNAME PKGBUILD (pkgrel) has changed, manual intervention needed!" >&2; return 1; }
-}
-_helper_eos_branding_and_marking() {
-    # - append ".eos" to 'pkgver' value to mark EOS changes
-    # - add the EOS maintainer line
-    # - update checksums because some files were changed here
-
-    sed -i PKGBUILD -e "s|^\(pkgver=.*\)|\1.eos|"
-    if [ -z "$(grep "Maintainer.*endeavouros" PKGBUILD)" ] ; then
-        sed -i PKGBUILD -e "/^# Maintainer:/i \# Maintainer: EndeavourOS-Team <info@endeavouros.com>"
-    fi
-    updpkgsums PKGBUILD >& /dev/null
-}
 
 _yad_hook() {
     local -r url=https://gitlab.archlinux.org/archlinux/packaging/packages
@@ -587,63 +300,14 @@ _yad_hook() {
     fi
 }
 
-_yad_hook__old() {
-
-    return    # 2023-Mar-08: currently not used!
-
-
-    # patch the dialog height issue, see https://sourceforge.net/p/yad-dialog/tickets/322/#6f2d
-
-    local workdir="$PKGBUILD_ROOTDIR"/yad
-    local url=https://github.com/endeavouros-team/PKGBUILDS/raw/master/yad
-
-    pushd "$workdir" >/dev/null
-
-    cp PKGBUILD PKGBUILD.eos
-
-    _helper_get_files_from_Arch extra/yad       || return 1
-    _helper_compare_pkg_version_info extra/yad  || return 1
-
-    sed -i PKGBUILD -E \
-        -e '/autoreconf -ivf/i \  # patch for the dialog height issue\n  patch -u src/main.c -i ../../yad-github-issue-107.patch\n' \
-        -e "s|^(sha256sums=.*)\)|\1 '9af007ad9472afc9fa24e753b30ce7b91cf2e73a37a0074a64ae01979010b30f'\)|" \
-        -e "s|^(arch=.*)\)|\1 'aarch64' 'armv7'\)|" \
-        -e "s|^(source=.*)\)$|\1 '$url/yad-github-issue-107.patch'\)|" \
-        -e "s|^(pkgver=.*)|\1.eos|"
-
-    sed -i PKGBUILD \
-        -e 's|${pkgver}|${pkgver%.eos}|' \
-        -e '/sha256sums=/a \conflicts=(yad yad-git)\nprovides=(yad)\nreplaces=(yad-eos)'
-
-    _helper_eos_branding_and_marking
-
-    popd >/dev/null
-}
-
-_yad_hook_add_gspell() {
-    # add gspell to 'depends', and modify 'pkgrel'
-    sed -i "$PKGBUILD_ROOTDIR"/yad/PKGBUILD \
-        -e 's|^depends=(\([^\)]*\))$|depends=(\1 gspell)|' \
-        -e 's|^\(pkgrel=[0-9]*\)$|\1.1|'
-}
-
-_diff_file_and_data() {
-    local file="$1"
-    local data="$2"
-    local datafile="$3"
-    local retval
-
-    echo "$data" > $datafile
-    #diff "$file" "$datafile"
-    meld "$file" "$datafile"
-}
 
 GetAurVersion() {
     local pname="$1"
 
     # echo2 -n "[$FUNCNAME: $aur_src] "
 
-    case "$aur_src" in
+    ## shellcheck disable=2154
+    case "$aur_src" in      # aur_src value is set in assets.make
 	aur)
 	    local helper=/bin/yay
 	    [ -x $helper ] || helper=/bin/paru
@@ -653,7 +317,11 @@ GetAurVersion() {
 	local | *)
 	    local Pkgbuild="$AURSRCDIR/$REPONAME/$pname/PKGBUILD"
 	    if [ -e "$Pkgbuild" ] ; then
-		source "$Pkgbuild"
+                # shellcheck disable=1090
+                pushd "${Pkgbuild%/PKGBUILD}" || return 1
+		# source "$Pkgbuild"
+                ShowPkgbuildValue pkgver pkgrel 
+                popd
 		echo -n "$pkgver"-"$pkgrel"
 	    else
 		WARN "file '$Pkgbuild' not found!"

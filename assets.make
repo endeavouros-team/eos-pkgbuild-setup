@@ -3,6 +3,7 @@
 # TODO:
 #   - 2.12.2021:  update of multi-package PKGBUILD? Install should work, but deletion of old packages (thus updating) doesn't!
 #   - better epoch handling?
+#   - 27.8.2026:  separate AUR packages from PKGNAMES into PKGNAMES_AUR
 
 Color2() { eos-color "$1" 2; }        # Color to stderr
 Color1() { eos-color "$1"; }          # Color to stdout
@@ -230,7 +231,7 @@ GetPkgbuildValue1() {
                 else
                     retvar=$(grep ^pkgver= "$PKGBUILD")   # pkgver=something
                     retvar=${retvar#*=}                   # remove pkgver=
-                    retvar=${retvar%% *}                  # remove all after space
+                    retvar=${retvar%%[$'\t' ]*}           # remove all after first white space
                     retvar=${retvar//[\'\"]/}             # remove all quote marks
                 fi
                 unset -f pkgver
@@ -2360,7 +2361,7 @@ Main() {
             --dryrun
             --explain-hook-marks
             --fetch-timeout=
-            --pkgnames=
+            --pkgnames
             --pkgdiff
             --repoup
             --no-aur

@@ -1,55 +1,206 @@
 #!/bin/bash
 
-DIE()  { echo "==> $progname: error: $1" >&2; exit 1; }
-WARN() { echo "==> $progname: warning: $1" >&2; }
+# NOTE: this implementation is considered experimental and isn't fit for production!
 
-ShowValue()  {
-    case "$varcount" in
-        0) ;;
-        1) printf "%s\n" "$@" ;;
-        *) echo "$VAR:"; printf "    %s\n" "$@" ;;
-    esac
+_PBV_Help() {
+    cat <<EOF >&2
+$_PBV_progname shows the value of one or more named variables in the PKGBUILD file.
+The PKGBUILD file is expected to reside in the current working directory.
+
+Usage:    $_PBV_progname [options] variable-name(s)
+Options:  -h, --help               This help.
+          --combined               Show values concatenated as "v1-v2-v3" and so on.
+See also: man PKGBUILD
+
+Examples:
+   $ ShowPkgbuildValue pkgrel               # a non-array variable
+     1
+   $ ShowPkgbuildValue depends              # an array variable
+     curl
+     xdg-utils
+   $ ShowPkgbuildValue pkgrel depends       # non-array and array variables
+     pkgrel:
+         1
+     depends:
+         curl
+         xdg-utils
+EOF
 }
 
-GetPkgbuildFieldValue() {
-    local -r progname=${0##*/}
-    local VAR VARS=("$@")
-    varcount=${#VARS[@]}
+_PBV_DIE()  { echo -e "==> $_PBV_progname: error: $1" >&2; exit 1; }
+_PBV_WARN() { echo -e "==> $_PBV_progname: warning: $1" >&2; }
 
-    source ./PKGBUILD || DIE "$PWD/PKGBUILD not found."
+_PBV_ShowValue() {
+    local _PBV_vararg="$1"
 
-    for VAR in "$@" ; do
+    if [ "$_PBV_vararg" ] ; then
+        local _PBV_varname="$_PBV_vararg"
+    else
+        local -n _PBV_varname="${_PBV_VAR}"
+    fi
+    if [ "${_PBV_varname[0]}" ] ; then
+        case "$_PBV_combined" in
+            no)
+                case "$_PBV_varcount" in
+                    0) ;;
+                    1) printf "%s\n" "${_PBV_varname[@]}" ;;
+                    *) echo "$_PBV_VAR:"; printf "    %s\n" "${_PBV_varname[@]}" ;;
+                esac
+                ;;
+            yes)
+                case "${#_PBV_varname[@]}" in
+                    0) ;;
+                    1)  if [ "$_PBV_combined_val" ] ; then
+                            _PBV_combined_val+="-${_PBV_varname[0]}"
+                        else
+                            _PBV_combined_val="${_PBV_varname[0]}"
+                        fi
+                        ;;
+                    *)
+                        _PBV_DIE "sorry, don't know how to return a combines value from $_PBV_VAR that includes ${#_PBV_varname[*]} members"
+                        ;;
+                esac
+                ;;
+        esac
+    fi
+}
+
+_PBV_Show_pkgver() {
+    # Handle pkgver() if it exists.
+
+    local _PBV_pkgver="$pkgver"
+
+    if declare -F pkgver &>/dev/null ; then
+        local _PBV_log _PBV_code=0
+        _PBV_log=$(mktemp)
+        chmod go-rwx "$_PBV_log"
+        makepkg --skipinteg -od &> "$_PBV_log" || _PBV_code=$?
+        [ "$_PBV_code" -eq 0 ] || _PBV_DIE "$pkgname: pkgver: makepkg failed, exit code $_PBV_code.\n    See file $_PBV_log for the details."
+        rm -f "$_PBV_log"
+        _PBV_pkgver="$(grep ^pkgver= ./PKGBUILD)"
+        [ "$_PBV_pkgver" ]                       || _PBV_DIE "$pkgname: 'pkgver' is not set in $PWD/PKGBUILD!?"
+        [ "$(echo "$_PBV_pkgver" | wc -l)" = 1 ] || _PBV_DIE "$pkgname: failed to extract the value of 'pkgver' from $PWD/PKGBUILD."
+        _PBV_pkgver=${_PBV_pkgver#*=}
+        _PBV_pkgver=${_PBV_pkgver%%[$'\t' ]*}
+        _PBV_pkgver=${_PBV_pkgver//[\'\"]/}
+    fi
+    _PBV_ShowValue "$_PBV_pkgver"
+}
+
+_PBV_GetPkgbuildFieldValue() {
+    local _PBV_VAR _PBV_VARS=("$@")
+    local -r _PBV_varcount=${#_PBV_VARS[@]}
+    local _PBV_combined_val=""
+
+    source ./PKGBUILD || _PBV_DIE "$PWD/PKGBUILD not found or is not readable."
+
+    for _PBV_VAR in "$@" ; do
         # shellcheck disable=2154
-        case "$VAR" in                                          # Note: only a subset of PKGBUILD variables are handled below.
-            arch)            ShowValue "${arch[@]}" ;;
-            backup)          ShowValue "${backup[@]}" ;;
-            conflicts)       ShowValue "${conflicts[@]}" ;;
-            depends)         ShowValue "${depends[@]}" ;;
-            license)         ShowValue "${license[@]}" ;;
-            makedepends)     ShowValue "${makedepends[@]}" ;;
-            optdepends)      ShowValue "${optdepends[@]}" ;;
-            options)         ShowValue "${options[@]}" ;;
-            pkgname)         ShowValue "${pkgname[@]}" ;;
-            provides)        ShowValue "${provides[@]}" ;;
-            replaces)        ShowValue "${replaces[@]}" ;;
-            sha256sums)      ShowValue "${sha256sums[@]}" ;;
-            source)          ShowValue "${source[@]}" ;;
-            validpgpkeys)    ShowValue "${validpgpkeys[@]}" ;;
 
-            epoch)           ShowValue "$epoch" ;;
-            install)         ShowValue "$install" ;;
-            pkgdesc)         ShowValue "$pkgdesc" ;;
-            pkgrel)          ShowValue "$pkgrel" ;;
-            url)             ShowValue "$url" ;;
-            pkgver)          declare -F "$2" &>/dev/null && pkgver=$(pkgver)
-                             ShowValue "$pkgver"
-                             ;;
-            _ver)            ShowValue "$_ver" ;;                             # maybe not needed; not from 'man PKGBUILD' ...
-            *)               WARN "variable name '$VAR' is not supported"
-                             ;;
+        case "$_PBV_VAR" in
+            # arrays
+            arch |\
+            b2sums | b2sums_* |\
+            backup |\
+            changelog |\
+            checkdepends | checkdepends_* |\
+            cksums | cksums_* |\
+            conflicts | conflicts_* |\
+            depends | depends_* |\
+            epoch |\
+            groups |\
+            install |\
+            license |\
+            makedepends | makedepends_* |\
+            md5ums | md5sums_* |\
+            noextract |\
+            optdepends | optdepends_* |\
+            options | options_* |\
+            pkgdesc |\
+            pkgname |\
+            pkgrel |\
+            provides | provides_* |\
+            replaces | replaces_* |\
+            sha1sums | sha1sums_* |\
+            sha224sums | sha224sums_* |\
+            sha256sums | sha256sums_* |\
+            sha384sums | sha384sums_* |\
+            sha512sums | sha512sums_* |\
+            "source" | source_* |\
+            url |\
+            validpgpkeys |\
+            xdata)
+                _PBV_ShowValue ;;
+            pkgver)
+                _PBV_Show_pkgver ;;
+            *)
+                _PBV_WARN "variable name '$_PBV_VAR' is not supported"
+                ;;
         esac
     done
 }
 
-# Parameters: field-name(s)
-GetPkgbuildFieldValue "$@"
+_PBV_Main() {
+    local -r _PBV_progname=${0##*/}
+    local _PBV_arg
+    local _PBV_combined=no
+    local _PBV_variables=()
+
+    for _PBV_arg in "$@" ; do
+        case "$_PBV_arg" in
+            -h | --help)            _PBV_Help; exit 0 ;;
+            --combined)             _PBV_combined=yes ;;
+            --list-supported-names) _PBV_ListSupportedNames; exit 0 ;;
+            --options)              echo "-h --help --combined --list-supported-names --options"; exit 0 ;;
+            -*)                     ;;
+            *)                      _PBV_variables+=("$_PBV_arg") ;;
+        esac
+    done
+    _PBV_GetPkgbuildFieldValue "${_PBV_variables[@]}"
+}
+
+_PBV_AllArchs() {
+    local _PBV_name="$1"
+    echo "${_PBV_name}"{,_x86_64,_arm,_armv7h,_aarch64}
+}
+
+_PBV_ListSupportedNames() {
+    # shellcheck disable=2207
+    local _PBV_varnames=(
+        arch
+        $(_PBV_AllArchs b2sums)
+        backup
+        changelog
+        $(_PBV_AllArchs checkdepends)
+        $(_PBV_AllArchs cksums)
+        $(_PBV_AllArchs conflicts)
+        $(_PBV_AllArchs depends)
+        epoch
+        groups
+        install
+        license
+        $(_PBV_AllArchs makedepends)
+        $(_PBV_AllArchs md5ums)
+        noextract
+        $(_PBV_AllArchs optdepends)
+        $(_PBV_AllArchs options)
+        pkgdesc
+        pkgname
+        pkgrel
+        pkgver
+        $(_PBV_AllArchs provides)
+        $(_PBV_AllArchs replaces)
+        $(_PBV_AllArchs sha1sums)
+        $(_PBV_AllArchs sha224sums)
+        $(_PBV_AllArchs sha256sums)
+        $(_PBV_AllArchs sha384sums)
+        $(_PBV_AllArchs sha512sums)
+        $(_PBV_AllArchs source)
+        url
+        validpgpkeys
+        xdata
+    )
+    echo "${_PBV_varnames[*]}"
+}
+
+_PBV_Main "$@"
