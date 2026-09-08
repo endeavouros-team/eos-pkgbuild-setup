@@ -39,6 +39,7 @@ local ARCHIVE_GIT="$EOS_ROOT/archive/.git"
 #
 PKGNAMES=(                                        # Alphabetically ordered.
     akm
+    bash-app-translate
     calamares
     ckbcomp
     downgrade
