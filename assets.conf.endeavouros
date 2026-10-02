@@ -121,14 +121,15 @@ PKGNAMES+=("${_PKGNAMES_FROM_AUR[@]}")
 #
 PKGNAMES_WAIT=(
     calamares
-    eos-settings-cosmic
-    eos-settings-sway
-    eos-sway-tools
+
+    endeavouros-branding
+
     # 'ckbcomp|1.233-1'     # in comparison to 1.228-1, this version has no changes to the 'ckbcomp' app
 
     # filesystem
     # lsb-release
 )
+# PKGNAMES_WAIT+=("${PKGNAMES[@]}")
 
 declare -A PKG_MAKEPKG_OPTIONS=(
     eos-dracut                 "--nodeps"
@@ -247,6 +248,13 @@ PickPkgbuildValue() {
 }
 
 _downgrade_hook_check_latest() {
+    local -r vrepo=$(expac -S %v downgrade)
+    local -r vaur=$(yay -Si downgrade | grep Version | awk '{print $NF}')
+    if [ "$vrepo" != "$vaur" ] ; then
+	echo -n "[repo=$vrepo != aur=$vaur] " >&2
+    fi
+}
+_downgrade_hook_check_latest_old() {
     # check if AUR PKGBUILD has the latest version of downgrade from the developer
     local tool=downgrade
     local url=https://github.com/pbrisbin/$tool/releases
